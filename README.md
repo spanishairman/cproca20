@@ -324,3 +324,113 @@ _Ansible-playbook_ в данном случае выглядит так:
 > вида `deb https://download.astralinux.ru/astra/stable/1.7_x86-64/repository-main/ 1.7_x86-64 main contrib non-free` закрыть символом комментария.
 
 В заключение сценария домашнем каталоге каждого созданного пользователя создаются файлы _.pgpass_ для подключения к базам данных сервера _Postgresql_.
+
+##### Установка и настройка сервисов _RcyptoPro.Ca.Service_, _CryptoPro.Ra.Service_, _CryptoPro.Ra.Web_
+
+Следующий шаг - создание и настройка основных служб Центра Сертификации. Для этого понадобится следующий _playbook_:
+
+<details>
+<summary>Ansible code</summary>
+
+```
+---
+- name: CryptoPro CA | 3. Install package CPCA. Set ACL privileges for pkica and CryptoPro.Ca.Service. Edit main config CPCA and CryptoPro.Ca.Service
+  hosts: cpcaserver
+  become: true
+  tasks:
+
+    - name: CryptoPro CA. APT. Install package "unzip" to latest version
+      ansible.builtin.apt:
+        name: unzip
+        state: present
+        update_cache: false
+
+    - name: CryptoPro CA. Extract archive.
+      ansible.builtin.shell: |
+        test -d /opt/cpca || mkdir $_
+        unzip ca-linux-x64-1.63.0.32.zip -d /opt/cpca
+      args:
+        executable: /bin/bash
+        chdir: /home/vagrant/
+
+    - name: CryptoPro CA. Set ACL privileges for CryptoPro.Ca.Service, CryptoPro.Ra.Service, CryptoPro.Ra.Web
+      ansible.builtin.shell: |
+        setfacl -m "u:cpca:r-x" CryptoPro.Ca.Service/CryptoPro.Ca.Service
+        setfacl -m "u:cpra:r-x" CryptoPro.Ra.Service/CryptoPro.Ra.Service
+        setfacl -m "u:cpra:r-x" CryptoPro.Ra.Web/CryptoPro.Ra.Web
+        setfacl -m "u:cpca:r-x" pkica/pkica
+        setfacl -m "u:cpra:r-x" pkica/pkica
+        setfacl -m "u:cpca:rwx" /home/cpra
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/
+
+    - name: CryptoPro CA. Set ACL privileges for certmgr, cryptcp
+      ansible.builtin.shell: |
+        setfacl -m "u:cpca:r-x" certmgr
+        setfacl -m "u:cpra:r-x" certmgr
+        setfacl -m "u:cpca:r-x" cryptcp
+        setfacl -m "u:cpra:r-x" cryptcp
+      args:
+        executable: /bin/bash
+        chdir: /opt/cprocsp/bin/amd64/
+
+    - name: CryptoPro CA. Set ACL privileges for nats-streaming-server (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)
+      ansible.builtin.shell: |
+        setfacl -m "u:cpca:r-x" nats-streaming-server
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/nats-streaming/
+
+    - name: CryptoPro CA. Edit main config for pkica (pkica - Программа настройки УЦ)
+      ansible.builtin.shell: |
+        sed -i '/CaDb/{n;n;s/Server=localhost;Database=Ca;Username=postgres;Pooling=True/Server=psql1server;Database=cpca;Username=cpca;Pooling=True/}' appsettings.json
+        sed -i '/RaDb/{n;n;s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server=psql1server;Database=cpra;Username=cpra;Pooling=True/}' appsettings.json
+        sed -i 's/"Secure": true/"Secure": false/' appsettings.json
+        sed -i "/Nats/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/$HOSTNAME/}" appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/pkica/
+
+    - name: CryptoPro CA. Edit main config (CryptoPro.Ca.Service - Сервис ЦС)
+      ansible.builtin.shell: |
+        sed -i 's/Server=localhost;Database=Ca;Username=postgres;Pooling=True/Server=psql1server;Database=cpca;Username=cpca;Pooling=True/' appsettings.json
+        sed -i '/nats/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i '/ClientID/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i "/Nats/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i 's/"SerialNumber": ""/"SerialNumber": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"/' appsettings.json
+        sed -i 's/"Company": ""/"Company": "ОАО \\"ЦЕНТР РАЗУМНЫХ РЕШЕНИЙ\\" ЛИМИТЕД"/' appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/CryptoPro.Ca.Service/
+
+    - name: CryptoPro RA. Edit main config (CryptoPro.Ra.Service - Сервис ЦР)
+      ansible.builtin.shell: |
+        export PATH=$PATH:/opt/cprocsp/bin/amd64
+        ttoldra=$(grep Thumbprint appsettings.json | tail -n 1 | awk '{print $2}' | awk -F "," '{print $1}')
+        ttnewra=$(certmgr -list -file /home/cpra/raclnt.cer | grep SHA1 | awk '{print $4}')
+        sed -i 's/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server=psql1server;Database=cpra;Username=cpra;Pooling=True/' appsettings.json
+        sed -i "/Nats/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i 's/"SerialNumber": ""/"SerialNumber": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"/' appsettings.json
+        sed -i 's/"Company": ""/"Company": "ОАО \\"ЦЕНТР РАЗУМНЫХ РЕШЕНИЙ\\" ЛИМИТЕД"/' appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/CryptoPro.Ra.Service/
+
+    - name: CryptoPro CA. Edit nats-streaming-server daemon config (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)
+      ansible.builtin.shell: |
+        sed -i "s/ca.example/$HOSTNAME/" nats.no-tls.conf
+        sed -i "s/ca.example/$HOSTNAME/" nats.conf
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/nats-streaming/
+```
+</details>
+
+Здесь мы с помощью задач: 
+  - _"CryptoPro CA. APT. Install package "unzip" to latest version"_ - установили пакет _unzip_ ;
+  - _"CryptoPro CA. Extract archive"_ - распаковали архив с приложениями;
+  - _"CryptoPro CA. Set ACL privileges for CryptoPro.Ca.Service, CryptoPro.Ra.Service, CryptoPro.Ra.Web"_ - разрешили запуск сервисов от имени соответствующих учётных записей;
