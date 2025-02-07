@@ -3,12 +3,15 @@
 Пример установки и первоначальной настройки удостоверяющего центра на базе программного обеспечения от _КриптоПро_. В данном примере попытаемся развернуть УЦ для тестирования с использованием среды виртуализации.
 > [!IMPORTANT]
 > Отметим сразу, что рассматриваемая здесь установка **КриптоПро ЦА 2.0** **не подразумевает** использование его в промышленных целях, так как мы не будем следовать требованиям, 
-> содержащимся в эксплуатационной документации.
+> содержащимся в эксплуатационной документации и предъявляемым при работе со _СКЗИ_ со стороны действующего законодательства.
 
 Стенд, на котором будет развернут комплекс, представляет собой хост-машину, где в качестве гипервизора установлено ПО виртуализации _KVM_ и среда разработки - _Vagrant_.
 Все узлы _Удостоверяющего Центра_ - это виртуальные машины, которые разворачиваются с помощью средств автоматизации и оркестрации _Vagrant_ и _Ansible_.
 
 Описание виртуальных машин в _Vagrantfile_ выглядит так:
+<details>
+<summary>Vagrantfile code</summary>
+
 ```
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
@@ -167,5 +170,24 @@ Vagrant.configure("2") do |config|
       SHELL
   end
 ```
+</details>
+
 Здесь приведено описание двух виртуальных машин: _cpca1server_ и _psql1server_ - сервер _Центра сертивикации/Центра регистрации_ и сервер баз данных, соответственно. В качестве _СУБД_ используется 
 _PostgreSQL_, установленная из репозиториев операционной системы. В соответствии с прилагаемым к _КриптоПро УЦ_ формуляром, будем разворачивать наш УЦ в ОС специального назначения - _Astra linux_.
+
+Рассмотрим подробнее блоки "file" виртуальной машины __cpca1server__:
+```
+  cpca1server.vm.provision "file", source: "cprokey/ca-linux-x64-1.63.0.32.zip", destination: "~/ca-linux-x64-1.63.0.32.zip"
+  cpca1server.vm.provision "file", source: "cprokey/linux-amd64_deb.tgz", destination: "~/linux-amd64_deb.tgz"
+  cpca1server.vm.provision "file", source: "cprokey/pgpass", destination: "~/.pgpass"
+  cpca1server.vm.provision "file", source: "cprokey/cryptopro.ca.service", destination: "~/cryptopro.ca.service"
+  cpca1server.vm.provision "file", source: "cprokey/cryptopro.ra.service", destination: "~/cryptopro.ra.service"
+  cpca1server.vm.provision "file", source: "cprokey/nats-streaming-server.service", destination: "~/nats-streaming-server.service"
+  cpca1server.vm.provision "file", source: "cprokey/Crypto\ Pro", destination: "~/"
+```
+В данном примере мы загрузили на виртуальную машину __cpca1server__, выступающую в роли УЦ, дистрибутивы: 
+  - _"КриптоПро УЦ 2.0 для Linux (сборка 1.63.0.32)"_ - ca-linux-x64-1.63.0.32.zip; 
+  - _КриптоПро CSP_ версии 5.0.13000-7 - linux-amd64_deb.tgz;
+  - Файл паролей для подключения к базам данных _PostgreSQL_ - pgpass;
+  - Файлы конфигурации служб для демона _SystemD_ - cryptopro.ca.service, cryptopro.ra.service, nats-streaming-server.service;
+  - Каталог с ранее сформированной _гаммой_ - Crypto Pro.
