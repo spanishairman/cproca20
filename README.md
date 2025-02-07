@@ -193,3 +193,47 @@ _PostgreSQL_, установленная из репозиториев опер�
   - Каталог с ранее сформированной _гаммой_ - Crypto Pro.
 
 Далее, в блоке настроек _SHELL_ мы редактируем файл _/etc/hosts_ и задаём базовые правила и политики для _iptables_.
+
+##### Распаковка дистрибутивов __КриптоПРО__ в рабочий каталог, ввод лицензий и настройка гаммы
+Все дальнейшие шаги мы будем выполнять удалённо со станции администратора (в нашем случае это хост виртуализации) с помощью плейбуков _Ansible_.
+
+Распакуем архив с дистрибутивом _КриптоПро CSP_, установим все необходимые пакеты и гамму, которая была предварительно сгенерирована на рабочей станции _Windows_:
+```
+---
+- name: CryptoPro CSP | 1. Extract archives. Install distributives CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma.
+  hosts: cpservers
+  tasks:
+    - name: CryptoPro CSP. Extract archive
+      ansible.builtin.shell: |
+        test -d csp50r2 || mkdir $_
+        tar -C csp50r2 -xvzf linux-amd64_deb.tgz --strip-components 1
+      args:
+        executable: /bin/bash
+        chdir: /home/vagrant/
+- name: CryptoPro CSP | Install distributives CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma.
+  hosts: cpservers
+  become: true
+  tasks:
+    - name: CryptoPro CSP. Install Software CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma.
+      ansible.builtin.shell: |
+        csp50r2/install.sh
+        dpkg -i csp50r2/lsb-cprocsp-kc2-64_5.0.13000-7_amd64.deb #КС2
+        dpkg -i csp50r2/cprocsp-stunnel-64_5.0.13000-7_amd64.deb #stunnel
+        dpkg -i csp50r2/lsb-cprocsp-devel_5.0.13000-7_all.deb #devel
+        dpkg -i csp50r2/cprocsp-nginx-64_5.0.13000-7_amd64.deb #nginx
+        dpkg -i csp50r2/cprocsp-pki-cades-64_2.0.15000-1_amd64.deb #cades
+        /opt/cprocsp/sbin/amd64/cpconfig -license -set 'XXXXX-XXXXX-XXXXX-XXXXX-XXXXX'
+        /opt/cprocsp/bin/amd64/ocsputil li -s 'XXXXX-XXXXX-XXXXX-XXXXX-XXXXX'
+        /opt/cprocsp/bin/amd64/tsputil li -s 'XXXXX-XXXXX-XXXXX-XXXXX-XXXXX'
+        cp Crypto\ Pro/db1/kis_1 /var/opt/cprocsp/dsrf/db1/
+        cp Crypto\ Pro/db2/kis_1 /var/opt/cprocsp/dsrf/db2/
+        chmod -R 777 "/var/opt/cprocsp/dsrf/"
+        /opt/cprocsp/sbin/amd64/cpconfig -hardware rndm -add cpsd -name 'cpsd rng' -level 3
+        /opt/cprocsp/sbin/amd64/cpconfig -hardware rndm -configure cpsd -add string /db1/kis_1 /var/opt/cprocsp/dsrf/db1/kis_1
+        /opt/cprocsp/sbin/amd64/cpconfig -hardware rndm -configure cpsd -add string /db2/kis_1 /var/opt/cprocsp/dsrf/db2/kis_1
+        systemctl restart cprocsp.service
+      args:
+        executable: /bin/bash
+        chdir: /home/vagrant/
+```
+Лицензии, которые необходимо ввести на данном шаге, либо приобретаются у вендора, либо запрашиваются в качестве ознакомительных.
