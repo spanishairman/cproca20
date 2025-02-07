@@ -194,15 +194,21 @@ _PostgreSQL_, установленная из репозиториев опер�
 
 Далее, в блоке настроек _SHELL_ мы редактируем файл _/etc/hosts_ и задаём базовые правила и политики для _iptables_.
 
-##### Распаковка дистрибутивов __КриптоПРО__ в рабочий каталог, ввод лицензий и настройка гаммы
+##### Распаковка дистрибутивов __КриптоПРО__ в рабочий каталог, ввод лицензий и настройка гаммы на сервере __cpca1server__
 Все дальнейшие шаги мы будем выполнять удалённо со станции администратора (в нашем случае это хост виртуализации) с помощью плейбуков _Ansible_.
 
-Распакуем архив с дистрибутивом _КриптоПро CSP_, установим все необходимые пакеты и гамму, которая была предварительно сгенерирована на рабочей станции _Windows_:
+Распакуем архив с дистрибутивом _КриптоПро CSP_, установим все необходимые пакеты и __гамму__, которая была предварительно сгенерирована в _КриптоПро CSP_ на рабочей станции _Windows_.
+_Ansible-playbook_ в данномм случае выглядит так:
+
+<details>
+<summary>Ansible code</summary>
+
 ```
 ---
 - name: CryptoPro CSP | 1. Extract archives. Install distributives CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma.
   hosts: cpservers
   tasks:
+
     - name: CryptoPro CSP. Extract archive
       ansible.builtin.shell: |
         test -d csp50r2 || mkdir $_
@@ -210,6 +216,7 @@ _PostgreSQL_, установленная из репозиториев опер�
       args:
         executable: /bin/bash
         chdir: /home/vagrant/
+
 - name: CryptoPro CSP | Install distributives CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma.
   hosts: cpservers
   become: true
@@ -236,4 +243,82 @@ _PostgreSQL_, установленная из репозиториев опер�
         executable: /bin/bash
         chdir: /home/vagrant/
 ```
+</details>
+
 Лицензии, которые необходимо ввести на данном шаге, либо приобретаются у вендора, либо запрашиваются в качестве ознакомительных.
+
+##### Установка программного обеспечения, создание группы и пользователей на сервере __cpca1server__
+
+Код плейбука под спойлером:
+
+<details>
+<summary>Ansible code</summary>
+
+```
+---
+- name: CryptoPro CA | 2. Install packages acl,postgresql-client. Create group and users. Create .pgpass file
+  hosts: cpcaserver
+  become: true
+  tasks:
+
+    - name: CryptoPro CA. APT. Update the repository cache and install packages "acl" and "postgresql-client" to latest version
+      ansible.builtin.apt:
+        name: acl,postgresql-client
+        state: present
+        update_cache: false
+
+    - name: CryptoPro CA. Download and install old libssl1.0 package (Only for Debian Linux)
+      ansible.builtin.shell: |
+        # wget http://snapshot.debian.org/archive/debian/20190501T215844Z/pool/main/g/glibc/multiarch-support_2.28-10_amd64.deb
+        # wget https://snapshot.debian.org/archive/debian-archive/20190328T105444Z/debian/pool/main/o/openssl/libssl1.0.0_1.0.2l-1~bpo8%2B1_amd64.deb
+        # dpkg -i multiarch-support_2.28-10_amd64.deb
+        # dpkg -i libssl1.0.0_1.0.2l-1~bpo8+1_amd64.deb
+      args:
+        executable: /bin/bash
+        chdir: /home/vagrant/
+
+    - name: CryptoPro CA. Ensure group "crl-writers" exists
+      ansible.builtin.group:
+        name: crl-writers
+        state: present
+
+    - name: CryptoPro CA. Add the user 'cpca' with a bash shell, appending the group 'crl-writers' and to the user's groups
+      ansible.builtin.user:
+        name: cpca
+        password: '!'
+        comment: CryptoPro CA
+        shell: /bin/bash
+        create_home: yes
+        groups: crl-writers
+        append: yes
+
+    - name: CryptoPro CA. Add the user 'cpra' with a bash shell
+      ansible.builtin.user:
+        name: cpra
+        password: '!'
+        comment: CryptoPro RA
+        shell: /bin/bash
+        create_home: yes
+
+    - name: CryptoPro CA. Create .pgpass file for new users
+      ansible.builtin.shell: |
+        cat .pgpass > /home/cpca/.pgpass
+        cat .pgpass > /home/cpra/.pgpass
+        chown cpca: /home/cpca/.pgpass
+        chown cpra: /home/cpra/.pgpass
+        chmod 600 /home/cpca/.pgpass
+        chmod 600 /home/cpra/.pgpass
+      args:
+        executable: /bin/bash
+        chdir: /home/vagrant/
+```
+</details>
+
+В данном примере мы с помощью утилиты _Apt_ установили из репозитория _Astra Linux_ пакеты _acl_ и _postgresql-client_, создали группу пользователей _crl-writers_ и две учётные записи - _cpca_ и _cpra_. 
+С правами первой будут работать сервисы _NATS_ и _CryptoPro.Ca.Service_. Учётная запись _cpra_ нужна для работы службы _CryptoPro.Ra.Service_ и _CryptoPro.Ra.Web_.
+
+> [!TIP]
+> В качестве репозитория программного обеспечения будем использовать установочный носитель __Astra Linux 1.7.5__, смонтированный для чтения внутри виртуальной машины. 
+> Диск монтруется с помощью команды `mount -o loop /home/vagrant/installation-1.7.5.9-16.10.23_16.58.iso /media/localiso/` вызываемой в блоке _SHELL_ соответствующего _Vagrantfile_.
+
+В домашнем каталоге каждого созданного пользователя создаются файлы _.pgpass_ для подключения к базам данных сервера _Postgresql_.
