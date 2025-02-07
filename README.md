@@ -335,7 +335,8 @@ _гамму_ в рабочий каталог.
 
 В заключение сценария домашнем каталоге каждого созданного пользователя создаются файлы _.pgpass_ для подключения к базам данных сервера _Postgresql_.
 
-> [!NOTE] Задача _CryptoPro CA. Download and install old libssl1.0 package (Only for Debian Linux)_ предназначена для скачивания и установки устаревшего пакета _libssl1.0_
+> [!NOTE] 
+> Задача _CryptoPro CA. Download and install old libssl1.0 package (Only for Debian Linux)_ предназначена для скачивания и установки устаревшего пакета _libssl1.0_
 > в случае разворачивания комплекса _КриптоПро УЦ 2.0_ на современных дистрибутивах _Debian_, новее выпуска _Jessie_.
 
 ##### Установка и настройка сервисов _CryptoPro.Ca.Service_, _CryptoPro.Ra.Service_, _CryptoPro.Ra.Web_
