@@ -1,0 +1,13 @@
+[Unit]
+Description=CryptoPro.Ca.Service
+[Service]
+WorkingDirectory=/opt/cpca/CryptoPro.Ca.Service/
+ExecStart=/opt/cpca/CryptoPro.Ca.Service/CryptoPro.Ca.Service
+Restart=always
+# Restart service after 10 seconds if the dotnet service crashes:
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=cryptopro-ca-service
+User=cpca
+[Install]
+WantedBy=multi-user.target

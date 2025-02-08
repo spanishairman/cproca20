@@ -339,9 +339,9 @@ _гамму_ в рабочий каталог.
 > Задача _CryptoPro CA. Download and install old libssl1.0 package (Only for Debian Linux)_ предназначена для скачивания и установки устаревшего пакета _libssl1.0_
 > в случае разворачивания комплекса _КриптоПро УЦ 2.0_ на современных дистрибутивах _Debian_, новее выпуска _Jessie_.
 
-#### Установка и настройка сервисов _CryptoPro.Ca.Service_, _CryptoPro.Ra.Service_, _CryptoPro.Ra.Web_
+#### Установка и настройка сервисов _CryptoPro.Ca.Service_, _CryptoPro.Ra.Service_, _CryptoPro.Ra.Web_, _NATS_
 
-Следующий шаг - создание и настройка основных служб _Центра Сертификации_. Для этого понадобится следующий _playbook_:
+Следующий шаг - создание и настройка основных служб _Удостоверяющего Центра_. Для этого понадобится следующий _playbook_:
 
 <details>
 <summary>Ansible code</summary>
@@ -453,4 +453,15 @@ _гамму_ в рабочий каталог.
   - _CryptoPro CA. Set ACL privileges for nats-streaming-server (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)_ - разрешили 
 запуск сервиса для пользователя _cpca_;
   - _CryptoPro CA. Edit main config for pkica (pkica - Программа настройки УЦ)_ - настроили подключение к базам данных _Центра Сертификации_ и _Центра Регистрации_, отключили использование
-протокола _TLS_ и задали имя хоста служб _Nats_, _Stan_ для pkica - программы настройки УЦ.
+протокола _TLS_ и задали имя хоста служб _Nats_, _Stan_ для pkica - программы настройки УЦ;
+  - _CryptoPro CA. Edit main config (CryptoPro.Ca.Service - Сервис ЦС)_ - настроили подключение к базе данных _Центра Сертификации_, отключили использование протокола 
+_TLS_, задали имя хоста служб _Nats_, _Stan_ для _CryptoPro.Ca.Service_ и активировали лицензию.
+  - _CryptoPro RA. Edit main config (CryptoPro.Ra.Service - Сервис ЦР)_ _ проделали все те же шаги, что и в предыдущем пункте, но для службы _CryptoPro.Ra.Service_.
+
+#### Создание рабочих катлогов, регистрация новых сервисов
+
+На данном этапе мы создадим каталоги:
+  - для хранения очередей (сообщений) - _/var/lib/nats-streaming/pkica-store_;
+  - для хранения сертификатов __nats-streaming-server__ - _/opt/cpca/nats-streaming/ssl/_;
+  - для публикации __САС__ (список аннулированных сертификатов) - _/var/lib/cpca/cdp_;
+  - для хранения журналов __Центра Сертификации__ - _/var/log/cpca_.
