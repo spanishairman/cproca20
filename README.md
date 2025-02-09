@@ -339,9 +339,9 @@ _гамму_ в рабочий каталог.
 > Задача _CryptoPro CA. Download and install old libssl1.0 package (Only for Debian Linux)_ предназначена для скачивания и установки устаревшего пакета _libssl1.0_
 > в случае разворачивания комплекса _КриптоПро УЦ 2.0_ на современных дистрибутивах _Debian_, новее выпуска _Jessie_.
 
-#### Установка и настройка сервисов _CryptoPro.Ca.Service_, _CryptoPro.Ra.Service_, _CryptoPro.Ra.Web_, _NATS_
+#### Установка и настройка приложений _CryptoPro.Ca.Service_, _CryptoPro.Ra.Service_, _CryptoPro.Ra.Web_, _NATS_
 
-Следующий шаг - создание и настройка основных служб _Удостоверяющего Центра_. Для этого понадобится следующий _playbook_:
+Следующий шаг - создание и настройка основных пакетов _Удостоверяющего Центра_. Для этого понадобится следующий _playbook_:
 
 <details>
 <summary>Ansible code</summary>
@@ -447,8 +447,8 @@ _гамму_ в рабочий каталог.
 Здесь мы с помощью задач: 
   - _"CryptoPro CA. APT. Install package "unzip" to latest version"_ - установили пакет _unzip_ ;
   - _"CryptoPro CA. Extract archive"_ - распаковали архив с приложениями;
-  - _"CryptoPro CA. Set ACL privileges for CryptoPro.Ca.Service, CryptoPro.Ra.Service, CryptoPro.Ra.Web"_ - разрешили запуск сервисов от имени соответствующих учётных записей;
-  - _CryptoPro CA. Set ACL privileges for certmgr, cryptcp_ - разрешили запуск сервисов от имени соответствующих учётных записей (необязательно, соответствующие файлы по 
+  - _"CryptoPro CA. Set ACL privileges for CryptoPro.Ca.Service, CryptoPro.Ra.Service, CryptoPro.Ra.Web"_ - разрешили запуск приложений от имени соответствующих учётных записей;
+  - _CryptoPro CA. Set ACL privileges for certmgr, cryptcp_ - разрешили запуск утилит от имени соответствующих учётных записей (необязательно, соответствующие файлы по 
 умолчанию имеют бит исполнения для всех категорий пользователей);
   - _CryptoPro CA. Set ACL privileges for nats-streaming-server (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)_ - разрешили 
 запуск сервиса для пользователя _cpca_;
