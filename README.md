@@ -465,3 +465,69 @@ _TLS_, задали имя хоста служб _Nats_, _Stan_ для _CryptoPr
   - для хранения сертификатов __nats-streaming-server__ - _/opt/cpca/nats-streaming/ssl/_;
   - для публикации __САС__ (список аннулированных сертификатов) - _/var/lib/cpca/cdp_;
   - для хранения журналов __Центра Сертификации__ - _/var/log/cpca_.
+
+Предоставим группе безопасности _crl-writers_ права для установки CRL в хранилище LocalMachine\CA (файл _/var/opt/cprocsp/users/stores/ca.sto_).
+> Для подключения к NATS/NATS Streaming с использованием TLS необходимо, чтобы в локальном хранилище компьютера «Промежуточные Центры сертификации» (Local Machine\CA)
+> были установлены действующие CRL. Сервис ЦС (CryptoPro.Ca.Service) и другие сервисы, взаимодействующие с ним через NATS Streaming, поддерживают автоматическую установку 
+> выпущенных CRL в это хранилище[^1].
+
+Зарегистрируем, разрешим загрузку и запустим сервисы _SystemD_:
+  - ![nats-streaming-server.service](files/cprokey/nats-streaming-server.service);
+  - ![cryptopro.ca.service](files/cprokey/cryptopro.ca.service);
+  - ![cryptopro.ra.service](files/cprokey/cryptopro.ra.service).
+
+Примеры файлов служб: nats-streaming-server.service:
+
+```
+[Unit]
+Description=nats-streaming-server
+[Service]
+WorkingDirectory=/opt/cpca/nats-streaming
+ExecStart=/opt/cpca/nats-streaming/nats-streaming-server -sc /opt/cpca/nats-streaming/nats.no-tls.conf
+Restart=always
+# Restart service after 10 seconds if the dotnet service crashes:
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=nats-streaming-server
+User=cpca
+[Install]
+WantedBy=multi-user.target
+```
+
+cryptopro.ca.service:
+
+```
+[Unit]
+Description=CryptoPro.Ca.Service
+[Service]
+WorkingDirectory=/opt/cpca/CryptoPro.Ca.Service/
+ExecStart=/opt/cpca/CryptoPro.Ca.Service/CryptoPro.Ca.Service
+Restart=always
+# Restart service after 10 seconds if the dotnet service crashes:
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=cryptopro-ca-service
+User=cpca
+[Install]
+WantedBy=multi-user.target
+```
+
+cryptopro.ra.service:
+
+```
+[Unit]
+Description=CryptoPro.Ra.Service
+[Service]
+WorkingDirectory=/opt/cpca/CryptoPro.Ra.Service/
+ExecStart=/opt/cpca/CryptoPro.Ra.Service/CryptoPro.Ra.Service
+Restart=always
+# Restart service after 10 seconds if the dotnet service crashes:
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=cryptopro-ra-service
+User=cpra
+[Install]
+WantedBy=multi-user.target
+```
+
+[^1]: 2.6 Установка CRL в хранилище. ЖТЯИ.00078-03 90 02. ПАК КриптоПро УЦ 2.0. Руководство по установке.
