@@ -469,7 +469,7 @@ _TLS_, задали имя хоста служб _Nats_, _Stan_ для _CryptoPr
 Предоставим группе безопасности _crl-writers_ права для установки CRL в хранилище LocalMachine\CA (файл _/var/opt/cprocsp/users/stores/ca.sto_).
 > Для подключения к NATS/NATS Streaming с использованием TLS необходимо, чтобы в локальном хранилище компьютера «Промежуточные Центры сертификации» (Local Machine\CA)
 > были установлены действующие CRL. Сервис ЦС (CryptoPro.Ca.Service) и другие сервисы, взаимодействующие с ним через NATS Streaming, поддерживают автоматическую установку 
-> выпущенных CRL в это хранилище[^1].
+> выпущенных CRL в это хранилище.[^1]
 
 Зарегистрируем, разрешим загрузку и запустим сервисы _SystemD_:
   - ![nats-streaming-server.service](files/cprokey/nats-streaming-server.service);
@@ -529,5 +529,70 @@ User=cpra
 [Install]
 WantedBy=multi-user.target
 ```
+
+<details>
+<summary>Ansible code</summary>
+
+```
+---
+- name: CryptoPro CA | 4. Create a messages store dir for nats-streaming-server. Create directories. Register nats-streaming-server daemon
+  hosts: cpcaserver
+  become: true
+  tasks:
+
+    - name: CryptoPro CA. Create a messages store dir for nats-streaming-server
+      ansible.builtin.shell: |
+        mkdir -p /var/lib/nats-streaming/pkica-store
+        chown -R cpca: /var/lib/nats-streaming/pkica-store
+      args:
+        executable: /bin/bash
+
+    - name: CryptoPro CA. Create a certificates store dir for nats-streaming-server
+      ansible.builtin.shell: |
+        mkdir -p /opt/cpca/nats-streaming/ssl/
+        chown -R cpca: /opt/cpca/nats-streaming/ssl/
+      args:
+        executable: /bin/bash
+
+    - name: CryptoPro CA. Create a crl store dir for ca-server
+      ansible.builtin.shell: |
+        mkdir -p /var/lib/cpca/cdp
+        chown -R cpca: /var/lib/cpca/cdp
+      args:
+        executable: /bin/bash
+
+    - name: CryptoPro CA. Create a log dir for cryptopro.ca.service
+      ansible.builtin.shell: |
+        mkdir -p /var/log/cpca
+        chown -R cpca: /var/log/cpca
+      args:
+        executable: /bin/bash
+
+    - name: CryptoPro CA. Change owner for storage LocalMachine\CA
+      ansible.builtin.shell: |
+        chown :crl-writers ca.sto
+        chmod g+w ca.sto
+      args:
+        executable: /bin/bash
+        chdir: /var/opt/cprocsp/users/stores/
+
+    - name: CryptoPro CA. Configure and Register nats-streaming-server cryptopro.ca.service, cryptopro.ra.service, start services
+      ansible.builtin.shell: |
+        cp nats-streaming-server.service /etc/systemd/system/
+        cp cryptopro.ca.service /etc/systemd/system/
+        cp cryptopro.ra.service /etc/systemd/system/
+        chown root: /etc/systemd/system/nats-streaming-server.service /etc/systemd/system/cryptopro.ca.service /etc/systemd/system/cryptopro.ra.service
+        systemctl daemon-reload
+        systemctl enable nats-streaming-server.service
+        systemctl enable cryptopro.ca.service
+        systemctl enable cryptopro.ra.service
+        systemctl start nats-streaming-server.service
+        systemctl start cryptopro.ca.service
+        systemctl start cryptopro.ra.service
+      args:
+        executable: /bin/bash
+        chdir: /home/vagrant/
+```
+</details>
 
 [^1]: 2.6 Установка CRL в хранилище. ЖТЯИ.00078-03 90 02. ПАК КриптоПро УЦ 2.0. Руководство по установке.
