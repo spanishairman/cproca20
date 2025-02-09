@@ -531,6 +531,7 @@ User=cpra
 WantedBy=multi-user.target
 ```
 
+Код плейбука под спойлером:
 <details>
 <summary>Ansible code</summary>
 
