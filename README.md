@@ -200,6 +200,193 @@ Vagrant.configure("2") do |config|
   - _vagrant-libvirt-inet1_ - изолированная сеть, без выхода в интернет и доступа к каким-либо хостам, включая хост виртуализации;
   - _vagrant-libvirt-mgmt_ - сеть управления, с её помощью выполняется управление виртуальными машинами, а также, эта сеть позволяет виртуальным машинам выходить в интернет. 
 
+#### Создание пользователей для работы с базами данных _PostgreSQL_, установка и настройка _psqlserver_ на сервере __psql1server__
+
+В _Astra Linux_ пользователь _СУБД_ должен быть так же пользователем в операционной системе и иметь права на чтение _атрибутов мандатного разграничения доступа_ 
+(Mandatory Access Control). Помимо этого, пользователь _postgres_, с правами которого работает база данных _PostgreSQL_, должен иметь доступ к базе данных с _MAC_.
+
+С помощью следующего плейбука мы выполним:
+  - добавление системных пользователей: задачи "PostgreSQL. Add the user 'cpca' with a bash shell" и "PostgreSQL. Add the user 'cpra' with a bash shell";
+  - установку ПО: "APT. Update the repository cache and install packages "postgresql", "python3-psycopg2", "acl" to latest version";
+  - предоставим доступы для удаленных пользователей к базам данных _ЦС_ и _ЦР_, задачи:
+    - Config. Edit pg_hba configuration file. Add cpca1server access. Открываем доступ с первой ноды сервера CA к базе cpca для пользователя cpca;
+    - Config. Edit pg_hba configuration file. Add cpca2server access. Открываем доступ со второй ноды сервера CA к базе cpca для пользователя cpca;
+    - Config. Edit pg_hba configuration file. Add cpca1server access. Открываем доступ с первой ноды сервера CA к базе cpra для пользователя cpra;
+    - Config. Edit pg_hba configuration file. Add cpca2server access. Открываем доступ со второй ноды сервера CA к базе cpra для пользователя cpra;
+  - отредактируем главный конфигурационный файл _PostgreSQL_: "Config. Bash. Edit postgresql.conf for enable all interfaces. Разрешаем входящие подключения к порту 5432 на всех интерфейсах."
+  - настроим Mandatory Access Control: "Config. Give the postgres user rights to read the mandatory access control database"
+  - создадим базы данных и роли, предостави права для созданных ролей:
+    - Create "cpca" user, and grant access to bases create;
+    - Create a new database with name "cpca";
+    - Connect to "cpca" database, grant privileges on "cpca" database objects (database) for "cpca" role;
+    - Connect to "cpca" database, grant privileges on "cpca" database objects (schema) for "cpca" role;
+    - Create "cpra" user, and grant access to bases create;
+    - Create a new database with name "cpra";
+    - Connect to "cpra" database, grant privileges on "cpra" database objects (database) for "cpra" role;
+    - Connect to cpra database, grant privileges on "cpra" database objects (schema) for "cpra" role.
+
+> [!NOTE]
+> По списку задач можно заметить, что мы открываем доступ к базам данных для удаленных пользователей с первой и второй ноды сервера _CA_. 
+> Здесь мы предусматриваем дальнейшую настройку кластера высокой доступности _Центра Сертификации_, в случае необходимости его создания. 
+
+Код плейбука выглядит так:
+<details>
+<summary>Ansible code</summary>
+
+```
+---
+- name: PostgreSQL | Group of servers "psqlserver". Create users. Install packages "postgresql", "acl" on the "psqlserver" server group
+  hosts: psqlserver
+  become: true
+  tasks:
+    - name: PostgreSQL. Add the user 'cpca' with a bash shell
+      ansible.builtin.user:
+        name: cpca
+        password: '!'
+        comment: CryptoPro CA
+        shell: /bin/bash
+        create_home: yes
+    - name: PostgreSQL. Add the user 'cpra' with a bash shell
+      ansible.builtin.user:
+        name: cpra
+        password: '!'
+        comment: CryptoPro RA
+        shell: /bin/bash
+        create_home: yes
+    - name: APT. Update the repository cache and install packages "postgresql", "python3-psycopg2", "acl" to latest version
+      ansible.builtin.apt:
+        name: postgresql,python-psycopg2,python3-psycopg2,python-ipaddress,acl
+        state: present
+        update_cache: yes
+    - name: Config. Edit pg_hba configuration file. Add cpca1server access. Открываем доступ с первой ноды сервера CA к базе cpca для пользователя cpca.
+      postgresql_pg_hba:
+        dest: /etc/postgresql/11/main/pg_hba.conf
+        contype: host
+        users: cpca
+        source: 192.168.1.3
+        databases: all
+        method: md5
+        create: true
+    - name: Config. Edit pg_hba configuration file. Add cpca2server access. Открываем доступ со второй ноды сервера CA к базе cpca для пользователя cpca.
+      postgresql_pg_hba:
+        dest: /etc/postgresql/11/main/pg_hba.conf
+        contype: host
+        users: cpca
+        source: 192.168.1.4
+        databases: all
+        method: md5
+        create: true
+    - name: Config. Edit pg_hba configuration file. Add cpca1server access. Открываем доступ с первой ноды сервера CA к базе cpra для пользователя cpra.
+      postgresql_pg_hba:
+        dest: /etc/postgresql/11/main/pg_hba.conf
+        contype: host
+        users: cpra
+        source: 192.168.1.3
+        databases: all
+        method: md5
+        create: true
+    - name: Config. Edit pg_hba configuration file. Add cpca2server access. Открываем доступ со второй ноды сервера CA к базе cpra для пользователя cpra.
+      postgresql_pg_hba:
+        dest: /etc/postgresql/11/main/pg_hba.conf
+        contype: host
+        users: cpra
+        source: 192.168.1.4
+        databases: all
+        method: md5
+        create: true
+    - name: Config. Bash. Edit postgresql.conf for enable all interfaces. Разрешаем входящие подключения к порту 5432 на всех интерфейсах.
+      ansible.builtin.shell: |
+        echo "listen_addresses = '*'" >> postgresql.conf
+        systemctl restart postgresql
+      args:
+        executable: /bin/bash
+        chdir: /etc/postgresql/11/main/
+    - name: Config. Give the postgres user rights to read the mandatory access control database
+      ansible.builtin.shell: |
+        usermod -a -G shadow postgres
+        setfacl -d -m u:postgres:r /etc/parsec/macdb
+        setfacl -R -m u:postgres:r /etc/parsec/macdb
+        setfacl -m u:postgres:rx /etc/parsec/macdb
+        setfacl -d -m u:postgres:r /etc/parsec/capdb
+        setfacl -R -m u:postgres:r /etc/parsec/capdb
+        setfacl -m u:postgres:rx /etc/parsec/capdb
+        pdpl-user -l 0:0 cpca
+        pdpl-user -l 0:0 cpra
+        systemctl restart postgresql
+      args:
+        executable: /bin/bash
+- name: PostgreSQL | Primary Server. Create database "cpca" and role "cpca" on the Primary.
+  hosts: psql1server
+  become: true
+  become_user: postgres
+  vars:
+    allow_world_readable_tmpfiles: true
+  tasks:
+    - name: Create "cpca" user, and grant access to bases create.
+      community.postgresql.postgresql_user:
+        name: cpca
+        password: P@ssw0rd
+        expires: "infinity"
+        role_attr_flags: "CREATEDB"
+    - name: Create a new database with name "cpca".
+      community.postgresql.postgresql_db:
+        name: cpca
+        owner: cpca
+        comment: "CryptoPro CA database"
+    - name: Connect to "cpca" database, grant privileges on "cpca" database objects (database) for "cpca" role.
+      community.postgresql.postgresql_privs:
+        database: cpca
+        state: present
+        privs: ALL
+        type: database
+        roles: cpca
+        grant_option: true
+    - name: Connect to "cpca" database, grant privileges on "cpca" database objects (schema) for "cpca" role.
+      community.postgresql.postgresql_privs:
+        database: cpca
+        state: present
+        privs: CREATE
+        type: schema
+        objs: public
+        roles: cpca
+- name: PostgreSQL | Primary Server. Create database "cpra" and role "cpra" on the Primary.
+  hosts: psql1server
+  become: true
+  become_user: postgres
+  vars:
+    allow_world_readable_tmpfiles: true
+  tasks:
+    - name: Create "cpra" user, and grant access to bases create.
+      community.postgresql.postgresql_user:
+        name: cpra
+        password: P@ssw0rd
+        expires: "infinity"
+        role_attr_flags: "CREATEDB"
+    - name: Create a new database with name "cpra".
+      community.postgresql.postgresql_db:
+        name: cpra
+        owner: cpra
+        comment: "CryptoPro RA database"
+    - name: Connect to "cpra" database, grant privileges on "cpra" database objects (database) for "cpra" role.
+      community.postgresql.postgresql_privs:
+        database: cpra
+        state: present
+        privs: ALL
+        type: database
+        roles: cpra
+        grant_option: true
+    - name: Connect to cpra database, grant privileges on "cpra" database objects (schema) for "cpra" role.
+      community.postgresql.postgresql_privs:
+        database: cpra
+        state: present
+        privs: CREATE
+        type: schema
+        objs: public
+        roles: cpra
+```
+</details>
+
+
 #### Распаковка дистрибутивов __КриптоПРО__ в рабочий каталог, ввод лицензий и настройка гаммы на сервере __cpca1server__
 Все дальнейшие шаги мы также будем выполнять удалённо со станции администратора (в нашем случае это хост виртуализации), теперь уже с помощью плейбуков _Ansible_.
 
