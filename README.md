@@ -173,7 +173,7 @@ Vagrant.configure("2") do |config|
 ```
 </details>
 
-Здесь приведено описание двух виртуальных машин: _cpca1server_ и _psql1server_ - сервер _Центра сертификации/Центра регистрации_ и сервер баз данных, соответственно. 
+Здесь приведено описание двух виртуальных машин: _cpca1server_ и _psql1server_ - сервер _Центра сертификации/Центра регистрации_ и сервер баз данных соответственно. 
 В качестве _СУБД_ используется _PostgreSQL_, установленная из репозиториев операционной системы. 
 В соответствии с прилагаемым к _КриптоПро УЦ_ формуляром, будем разворачивать наш УЦ в ОС специального назначения - _Astra linux 1.7.5_.
 
@@ -194,36 +194,36 @@ Vagrant.configure("2") do |config|
   - **cryptopro.ca.service**, **cryptopro.ra.service**, **nats-streaming-server.service** - Файлы конфигурации служб для демона _SystemD_;
   - **Crypto Pro** - Каталог с ранее сформированной _гаммой_.
 
-Далее, в блоке настроек _SHELL_ мы редактируем файл _/etc/hosts_ и задаём базовые правила и политики для _iptables_.
+Далее в блоке настроек _SHELL_ мы редактируем файл _/etc/hosts_ и задаём базовые правила и политики для _iptables_.
 
 Все создаваемые виртуальные машины имеют два сетевых интерфейса: 
   - _vagrant-libvirt-inet1_ - изолированная сеть, без выхода в интернет и доступа к каким-либо хостам, включая хост виртуализации;
-  - _vagrant-libvirt-mgmt_ - сеть управления, с её помощью выполняется управление виртуальными машинами, а также, эта сеть позволяет виртуальным машинам выходить в интернет. 
+  - _vagrant-libvirt-mgmt_ - сеть управления, с её помощью выполняется управление виртуальными машинами, а также эта сеть позволяет виртуальным машинам выходить в интернет. 
 
 #### Создание пользователей для работы с базами данных _PostgreSQL_, установка и настройка _psqlserver_ на сервере __psql1server__
 
-В _Astra Linux_ пользователь _СУБД_ должен быть так же пользователем в операционной системе и иметь права на чтение _атрибутов мандатного разграничения доступа_ 
-(Mandatory Access Control). Помимо этого, пользователь _postgres_, с правами которого работает база данных _PostgreSQL_, должен иметь доступ к базе данных с _MAC_.
+В _Astra Linux_ пользователь _СУБД_ должен быть также пользователем  операционной системы и иметь права на чтение _атрибутов мандатного разграничения доступа_ 
+(_Mandatory Access Control_). Помимо этого пользователь _postgres_, с правами которого работает база данных _PostgreSQL_, должен иметь доступ к базе данных с _MAC_.
 
 С помощью следующего плейбука мы выполним:
-  - добавление системных пользователей: задачи "PostgreSQL. Add the user 'cpca' with a bash shell" и "PostgreSQL. Add the user 'cpra' with a bash shell";
-  - установку ПО: "APT. Update the repository cache and install packages "postgresql", "python3-psycopg2", "acl" to latest version";
-  - предоставим доступы для удаленных пользователей к базам данных _ЦС_ и _ЦР_, задачи:
-    - Config. Edit pg_hba configuration file. Add cpca1server access. Открываем доступ с первой ноды сервера CA к базе cpca для пользователя cpca;
-    - Config. Edit pg_hba configuration file. Add cpca2server access. Открываем доступ со второй ноды сервера CA к базе cpca для пользователя cpca;
-    - Config. Edit pg_hba configuration file. Add cpca1server access. Открываем доступ с первой ноды сервера CA к базе cpra для пользователя cpra;
-    - Config. Edit pg_hba configuration file. Add cpca2server access. Открываем доступ со второй ноды сервера CA к базе cpra для пользователя cpra;
-  - отредактируем главный конфигурационный файл _PostgreSQL_: "Config. Bash. Edit postgresql.conf for enable all interfaces. Разрешаем входящие подключения к порту 5432 на всех интерфейсах."
-  - настроим Mandatory Access Control: "Config. Give the postgres user rights to read the mandatory access control database"
+  - добавление системных пользователей: задачи __"PostgreSQL. Add the user 'cpca' with a bash shell"__ и __"PostgreSQL. Add the user 'cpra' with a bash shell"__;
+  - установку ПО: __"APT. Update the repository cache and install packages "postgresql", "python3-psycopg2", "acl" to latest version"__;
+  - предоставим доступы для удаленных пользователей к базам данных _ЦС_ и _ЦР_. Задачи:
+    - __Config. Edit pg\_hba configuration file. Add cpca1server access. Открываем доступ с первой ноды сервера CA к базе cpca для пользователя cpca__;
+    - __Config. Edit pg\_hba configuration file. Add cpca2server access. Открываем доступ со второй ноды сервера CA к базе cpca для пользователя cpca__;
+    - __Config. Edit pg\_hba configuration file. Add cpca1server access. Открываем доступ с первой ноды сервера CA к базе cpra для пользователя cpra__;
+    - _Config. Edit pg\_hba configuration file. Add cpca2server access. Открываем доступ со второй ноды сервера CA к базе cpra для пользователя cpra__;
+  - отредактируем главный конфигурационный файл _PostgreSQL_: __"Config. Bash. Edit postgresql.conf for enable all interfaces. Разрешаем входящие подключения к порту 5432 на всех интерфейсах__"
+  - настроим Mandatory Access Control: __"Config. Give the postgres user rights to read the mandatory access control database"__;
   - создадим базы данных и роли, предостави права для созданных ролей:
-    - Create "cpca" user, and grant access to bases create;
-    - Create a new database with name "cpca";
-    - Connect to "cpca" database, grant privileges on "cpca" database objects (database) for "cpca" role;
-    - Connect to "cpca" database, grant privileges on "cpca" database objects (schema) for "cpca" role;
-    - Create "cpra" user, and grant access to bases create;
-    - Create a new database with name "cpra";
-    - Connect to "cpra" database, grant privileges on "cpra" database objects (database) for "cpra" role;
-    - Connect to cpra database, grant privileges on "cpra" database objects (schema) for "cpra" role.
+    - __Create "cpca" user, and grant access to bases create__;
+    - __Create a new database with name "cpca"__;
+    - __Connect to "cpca" database, grant privileges on "cpca" database objects (database) for "cpca" role__;
+    - __Connect to "cpca" database, grant privileges on "cpca" database objects (schema) for "cpca" role__;
+    - __Create "cpra" user, and grant access to bases create__;
+    - __Create a new database with name "cpra"__;
+    - __Connect to "cpra" database, grant privileges on "cpra" database objects (database) for "cpra" role__;
+    - __Connect to cpra database, grant privileges on "cpra" database objects (schema) for "cpra" role__.
 
 > [!NOTE]
 > По списку задач можно заметить, что мы открываем доступ к базам данных для удаленных пользователей с первой и второй ноды сервера _CA_. 
@@ -438,13 +438,13 @@ Vagrant.configure("2") do |config|
 ```
 </details>
 
-Здесь, в задаче _CryptoPro CSP. Extract archive_ мы распаковываем архив с установочными файлами в предварительно созданный каталог в домашней директории пользователя _Vagrant_.
-Затем, с помощью задачи _CryptoPro CSP. Install Software CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma_, устанавливаем пакеты и копируем 
+В задаче __"CryptoPro CSP. Extract archive"__ мы распаковываем архив с установочными файлами в предварительно созданный каталог в домашней директории пользователя _Vagrant_.
+Затем с помощью задачи __"CryptoPro CSP. Install Software CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma"__ устанавливаем пакеты и копируем 
 _гамму_ в рабочий каталог.
 > [!NOTE]
 > Лицензии, которые необходимо ввести на данном шаге, либо приобретаются, либо запрашиваются у вендора в качестве ознакомительных.
 
-#### Установка программного обеспечения, создание группы и пользователей на сервере __cpca1server__
+#### Установка программного обеспечения, создание группы безопасности и пользователей на сервере __cpca1server__
 
 Код плейбука под спойлером:
 
@@ -511,8 +511,9 @@ _гамму_ в рабочий каталог.
 ```
 </details>
 
-В данном примере мы с помощью утилиты _Apt_ установили из репозитория _Astra Linux_ пакеты _acl_ и _postgresql-client_, создали группу пользователей _crl-writers_ и две учётные записи - _cpca_ и _cpra_. 
-С правами первой будут работать сервисы _NATS_ и _CryptoPro.Ca.Service_. Учётная запись _cpra_ нужна для работы службы _CryptoPro.Ra.Service_ и _CryptoPro.Ra.Web_.
+В данном примере мы с помощью утилиты _Apt_ установили из репозитория _Astra Linux_ пакеты _acl_ и _postgresql-client_, создали группу пользователей _crl-writers_ 
+и две учётные записи - _cpca_ и _cpra_.  С правами первой будут работать сервисы _NATS_ и _CryptoPro.Ca.Service_. Учётная запись _cpra_ нужна для 
+работы служб _CryptoPro.Ra.Service_ и _CryptoPro.Ra.Web_.
 
 > [!TIP]
 > В качестве репозитория программного обеспечения будем использовать установочный носитель __Astra Linux 1.7.5__, предварительно смонтированный для чтения внутри виртуальной машины. 
@@ -520,7 +521,7 @@ _гамму_ в рабочий каталог.
 > Также потребуется добавить в файл _/etc/apt/sources.list_ строку `deb file:///media/localiso/ 1.7_x86-64 contrib main non-free`, а имеющиеся описания сетевых репозиториев
 > вида `deb https://download.astralinux.ru/astra/stable/1.7_x86-64/repository-main/ 1.7_x86-64 main contrib non-free` закрыть символом комментария.
 
-В заключение сценария домашнем каталоге каждого созданного пользователя создаются файлы _.pgpass_ для подключения к базам данных сервера _Postgresql_.
+В заключение сценария в домашнем каталоге каждого созданного пользователя создаются файлы _.pgpass_ для подключения к базам данных сервера _Postgresql_.
 
 > [!NOTE] 
 > Задача _CryptoPro CA. Download and install old libssl1.0 package (Only for Debian Linux)_ предназначена для скачивания и установки устаревшего пакета _libssl1.0_
@@ -632,18 +633,18 @@ _гамму_ в рабочий каталог.
 </details>
 
 Здесь мы с помощью задач: 
-  - _"CryptoPro CA. APT. Install package "unzip" to latest version"_ - установили пакет _unzip_ ;
-  - _"CryptoPro CA. Extract archive"_ - распаковали архив с приложениями;
-  - _"CryptoPro CA. Set ACL privileges for CryptoPro.Ca.Service, CryptoPro.Ra.Service, CryptoPro.Ra.Web"_ - разрешили запуск приложений от имени соответствующих учётных записей;
-  - _CryptoPro CA. Set ACL privileges for certmgr, cryptcp_ - разрешили запуск утилит от имени соответствующих учётных записей (необязательно, соответствующие файлы по 
+  - __"CryptoPro CA. APT. Install package "unzip" to latest version"__ - установили пакет _unzip_ ;
+  - __"CryptoPro CA. Extract archive"__ - распаковали архив с приложениями;
+  - __"CryptoPro CA. Set ACL privileges for CryptoPro.Ca.Service, CryptoPro.Ra.Service, CryptoPro.Ra.Web"__ - разрешили запуск приложений от имени соответствующих учётных записей;
+  - __"CryptoPro CA. Set ACL privileges for certmgr, cryptcp"__ - разрешили запуск утилит от имени соответствующих учётных записей (необязательное действие - соответствующие файлы по 
 умолчанию имеют бит исполнения для всех категорий пользователей);
-  - _CryptoPro CA. Set ACL privileges for nats-streaming-server (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)_ - разрешили 
+  - __"CryptoPro CA. Set ACL privileges for nats-streaming-server (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)"__ - разрешили 
 запуск сервиса для пользователя _cpca_;
-  - _CryptoPro CA. Edit main config for pkica (pkica - Программа настройки УЦ)_ - настроили подключение к базам данных _Центра Сертификации_ и _Центра Регистрации_, отключили использование
-протокола _TLS_ и задали имя хоста служб _Nats_, _Stan_ для pkica - программы настройки УЦ;
-  - _CryptoPro CA. Edit main config (CryptoPro.Ca.Service - Сервис ЦС)_ - настроили подключение к базе данных _Центра Сертификации_, отключили использование протокола 
+  - __"CryptoPro CA. Edit main config for pkica (pkica - Программа настройки УЦ)"__ - настроили подключение к базам данных _Центра Сертификации_ и _Центра Регистрации_, отключили использование
+протокола _TLS_ и задали имя хоста служб _Nats_, _Stan_ для _pkica_;
+  - __"CryptoPro CA. Edit main config (CryptoPro.Ca.Service - Сервис ЦС)"__ - настроили подключение к базе данных _Центра Сертификации_, отключили использование протокола 
 _TLS_, задали имя хоста служб _Nats_, _Stan_ для _CryptoPro.Ca.Service_ и активировали лицензию.
-  - _CryptoPro RA. Edit main config (CryptoPro.Ra.Service - Сервис ЦР)_ _ проделали все те же шаги, что и в предыдущем пункте, но для службы _CryptoPro.Ra.Service_.
+  - __"CryptoPro RA. Edit main config (CryptoPro.Ra.Service - Сервис ЦР)"__ _ проделали все те же шаги, что и в предыдущем пункте, но для службы _CryptoPro.Ra.Service_.
 
 #### Создание рабочих каталогов, регистрация новых сервисов
 
