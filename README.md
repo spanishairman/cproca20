@@ -185,7 +185,7 @@ Vagrant.configure("2") do |config|
 > [!NOTE]
 > Если быть точным, в формуляре к _"КриптоПро УЦ 2.0 1.63.0.32"_ содержится информация о функционировании серверов _Центра сертификации_ и _Центра регистрации_
 > в операционной системе специального назначения [«Astra Linux Special Edition» (РУСБ.10015-16)](https://wiki.astralinux.ru/pages/viewpage.action?pageId=331363095) 
-> или, что идентично - "Astra Linux Special Edition РУСБ.10015-01 (очередное обновление 1.6)".
+> или, что идентично - ["Astra Linux Special Edition РУСБ.10015-01 (очередное обновление 1.6)"](https://wiki.astralinux.ru/pages/viewpage.action?pageId=37290451).
 
 Рассмотрим подробнее блоки "file" виртуальной машины __cpca1server__:
 ```
