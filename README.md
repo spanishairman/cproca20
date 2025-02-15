@@ -656,7 +656,7 @@ _гамму_ в рабочий каталог.
 _TLS_, задали имя хоста служб _Nats_, _Stan_ для _CryptoPro.Ca.Service_ и активировали лицензию.
   - __"CryptoPro RA. Edit main config (CryptoPro.Ra.Service - Сервис ЦР)"__ _ проделали все те же шаги, что и в предыдущем пункте, но для службы _CryptoPro.Ra.Service_.
 
-#### Создание рабочих каталогов, регистрация новых сервисов
+#### Создание рабочих каталогов, регистрация новых сервисов на сервере cpca1server
 
 На данном этапе мы создадим каталоги:
   - для хранения очередей (сообщений) - _/var/lib/nats-streaming/pkica-store_;
@@ -794,6 +794,51 @@ WantedBy=multi-user.target
         chdir: /home/vagrant/
 ```
 </details>
+
+#### Создание баз данных для служб КриптоПро ЦС и КриптоПро ЦР, создание экземпляра служюы Центра сертификации, загрузка шаблонов. Запуск на сервере cpca1server
+
+Код плейбука:
+<details>
+<summary>Ansible code</summary>
+
+```
+---
+- name: CryptoPro CA | 5. Create databases for CA and RA services. Create CA instance. Add templates and new root cert
+  hosts: cpcaserver
+  become: true
+  become_user: cpca
+  tasks:
+    - name: CryptoPro CA. Create database for CA service
+      ansible.builtin.shell: |
+        yes | ./pkica ca db new
+        yes | ./pkica ra db new
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/pkica/
+    - name: Pause for 5 seconds
+      ansible.builtin.pause:
+        seconds: 5
+    - name: CryptoPro CA. Create CA instance
+      ansible.builtin.shell: |
+        ./pkica ca authority new --name "TRADEINN RETAIL SERVICES CA"
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/pkica/
+    - name: CryptoPro CA. Add templates
+      ansible.builtin.shell: |
+        ./pkica ca template add --default-template Qual
+        ./pkica ca template add --default-template QualOcsp
+        ./pkica ca template add --default-template QualTsp
+        ./pkica ca template add --default-template Tls
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/pkica/
+```
+</details>
+
+В коде данного плейбука, используя удалнное подключение с учётной записью _cpca_ с сервера _cpca1server_, создаются базы данных на сервере _СУБД_, 
+после чего инициализируется новый экземпляр службы _CA_ с именем _"TRADEINN RETAIL SERVICES CA"_. 
+Далее, для нового экземпляра службы загружаются стандартные шаблоны сертификатов. Для всех указанных действий используется утилита _pkica_.
 
 [^1]: ЖТЯИ.00078-03 30 01. ПАК КриптоПро УЦ 2.0. Формуляр. 2. Общие сведения и основные характеристики.
 [^2]: ЖТЯИ.00078-03 90 02. ПАК КриптоПро УЦ 2.0. Руководство по установке. 2.6 Установка CRL в хранилище.
