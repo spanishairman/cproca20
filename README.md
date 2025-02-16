@@ -4,11 +4,11 @@
 развернуть УЦ от [КриптоПро](https://cryptopro.ru/products/ca/2.0) для ознакомления с функционалом и тестирования.
 > [!IMPORTANT]
 > Сразу отмечу, что рассматриваемая здесь установка _КриптоПро УЦ 2.0_ **не подразумевает** использование его в промышленных целях и не является руководством для 
-> подобного применения, так как в данной реализации не происходит соответствие множеству требованиий, содержащихся в эксплуатационной документации и подлежащих 
+> подобного применения, так как в данной реализации нет соответствия множеству требованиий, содержащихся в эксплуатационной документации и подлежащих 
 > исполнению при работе с _СКЗИ_ со стороны действующего законодательства.
 
 Стенд, на котором будет развернут комплекс, представляет собой хост-машину, где в качестве гипервизора установлено ПО виртуализации _KVM_ и среда разработки - _Vagrant_.
-Все узлы _Удостоверяющего Центра_ - это _QEMU_ образы виртуальных машин, которые разворачиваются с помощью средств автоматизации и оркестрации _Vagrant_ и _Ansible_.
+Все узлы _Удостоверяющего Центра_ - это _QEMU_-образы виртуальных машин, которые разворачиваются с помощью средств автоматизации и оркестрации _Vagrant_ и _Ansible_.
 
 #### Установка и первоначальная настройка виртуальных машин с помощью _Vagrant_
 
@@ -180,7 +180,7 @@ Vagrant.configure("2") do |config|
 
 В данном _Vagrantfile_ приведено описание двух виртуальных машин: _cpca1server_ и _psql1server_ - сервер _Центра сертификации/Центра регистрации_ и сервер баз данных соответственно. 
 В качестве _СУБД_ используется _PostgreSQL_, установленная из репозиториев операционной системы. 
-В соответствии с прилагаемым к _КриптоПро УЦ_ формуляром, будем разворачивать наш УЦ в ОС специального назначения - _Astra linux 1.7.5_.
+В соответствии с прилагаемым к _КриптоПро УЦ_ формуляром, рассматриваемый _Удостоверяющий центр_ разворачивается в ОС специального назначения - _Astra linux 1.7.5_.
 
 > [!NOTE]
 > Если быть точным, в формуляре к _"КриптоПро УЦ 2.0 1.63.0.32"_ [^1] содержится информация о функционировании серверов _Центра сертификации_ и _Центра регистрации_
@@ -188,6 +188,7 @@ Vagrant.configure("2") do |config|
 > или, что идентично - ["Astra Linux Special Edition РУСБ.10015-01 (очередное обновление 1.6)"](https://wiki.astralinux.ru/pages/viewpage.action?pageId=37290451).
 
 Рассмотрим подробнее блоки "file" виртуальной машины __cpca1server__:
+
 ```
   cpca1server.vm.provision "file", source: "cprokey/ca-linux-x64-1.63.0.32.zip", destination: "~/ca-linux-x64-1.63.0.32.zip"
   cpca1server.vm.provision "file", source: "cprokey/linux-amd64_deb.tgz", destination: "~/linux-amd64_deb.tgz"
@@ -197,14 +198,15 @@ Vagrant.configure("2") do |config|
   cpca1server.vm.provision "file", source: "cprokey/nats-streaming-server.service", destination: "~/nats-streaming-server.service"
   cpca1server.vm.provision "file", source: "cprokey/Crypto\ Pro", destination: "~/"
 ```
-В данном примере мы загрузили на виртуальную машину __cpca1server__, выступающую в роли УЦ, следующие файлы: 
+
+В данном примере на виртуальную машину __cpca1server__, выступающую в роли УЦ, загружаются следующие файлы: 
   - **ca-linux-x64-1.63.0.32.zip** - _"КриптоПро УЦ 2.0 для Linux (сборка 1.63.0.32)"_; 
   - **linux-amd64\_deb.tgz** - _КриптоПро CSP_ версии 5.0.13000-7_;
   - **pgpass** - Файл паролей для подключения к базам данных _PostgreSQL_;
   - **cryptopro.ca.service**, **cryptopro.ra.service**, **nats-streaming-server.service** - Файлы конфигурации служб для демона _SystemD_;
   - **Crypto Pro** - Каталог с ранее сформированной _гаммой_.
 
-Далее в блоке настроек _SHELL_ мы редактируем файл _/etc/hosts_ и задаём базовые правила и политики для _iptables_.
+Далее в блоке настроек _SHELL_  производится редактирование файла _/etc/hosts_ и задаются базовые правила и политики для _iptables_.
 
 Все создаваемые виртуальные машины имеют два сетевых интерфейса: 
   - _vagrant-libvirt-inet1_ - изолированная сеть, без выхода в интернет и доступа к каким-либо хостам, включая хост виртуализации;
@@ -215,17 +217,17 @@ Vagrant.configure("2") do |config|
 В _Astra Linux_ пользователь _СУБД_ должен быть также пользователем  операционной системы и иметь права на чтение _атрибутов мандатного разграничения доступа_ 
 (_Mandatory Access Control_). Помимо этого пользователь _postgres_, с правами которого работает база данных _PostgreSQL_, должен иметь доступ к базе данных с _MAC_.
 
-С помощью следующего плейбука мы выполним:
+С помощью следующего плейбука выполняются:
   - добавление системных пользователей: задачи __"PostgreSQL. Add the user 'cpca' with a bash shell"__ и __"PostgreSQL. Add the user 'cpra' with a bash shell"__;
-  - установку ПО: __"APT. Update the repository cache and install packages "postgresql", "python3-psycopg2", "acl" to latest version"__;
-  - предоставим доступы для удаленных пользователей к базам данных _ЦС_ и _ЦР_. Задачи:
+  - установка ПО: __"APT. Update the repository cache and install packages "postgresql", "python3-psycopg2", "acl" to latest version"__;
+  - предоставление доступов для удаленных пользователей к базам данных _ЦС_ и _ЦР_. Задачи:
     - __Config. Edit pg\_hba configuration file. Add cpca1server access. Открываем доступ с первой ноды сервера CA к базе cpca для пользователя cpca__;
     - __Config. Edit pg\_hba configuration file. Add cpca2server access. Открываем доступ со второй ноды сервера CA к базе cpca для пользователя cpca__;
     - __Config. Edit pg\_hba configuration file. Add cpca1server access. Открываем доступ с первой ноды сервера CA к базе cpra для пользователя cpra__;
     - _Config. Edit pg\_hba configuration file. Add cpca2server access. Открываем доступ со второй ноды сервера CA к базе cpra для пользователя cpra__;
-  - отредактируем главный конфигурационный файл _PostgreSQL_: __"Config. Bash. Edit postgresql.conf for enable all interfaces. Разрешаем входящие подключения к порту 5432 на всех интерфейсах__"
-  - настроим Mandatory Access Control: __"Config. Give the postgres user rights to read the mandatory access control database"__;
-  - создадим базы данных и роли, предостави права для созданных ролей:
+  - отредактирование главного конфигурационного файла _PostgreSQL_: __"Config. Bash. Edit postgresql.conf for enable all interfaces. Разрешаем входящие подключения к порту 5432 на всех интерфейсах__"
+  - настройка Mandatory Access Control: __"Config. Give the postgres user rights to read the mandatory access control database"__;
+  - создание базы данных и пользователей, предоставление прав для созданных ролей:
     - __Create "cpca" user, and grant access to bases create__;
     - __Create a new database with name "cpca"__;
     - __Connect to "cpca" database, grant privileges on "cpca" database objects (database) for "cpca" role__;
@@ -237,7 +239,7 @@ Vagrant.configure("2") do |config|
 
 > [!NOTE]
 > По списку задач можно заметить, что мы открываем доступ к базам данных для удаленных пользователей с первой и второй ноды сервера _CA_. 
-> Здесь мы предусматриваем дальнейшую настройку кластера высокой доступности _Центра Сертификации_, в случае необходимости его создания. 
+> Здесь мы предусматриваем дальнейшую настройку кластера высокой доступности _Центра Сертификации_ (в случае необходимости его создания). 
 
 Код плейбука выглядит так:
 <details>
@@ -398,10 +400,12 @@ Vagrant.configure("2") do |config|
 
 
 #### Распаковка дистрибутивов __КриптоПРО__ в рабочий каталог, ввод лицензий и настройка гаммы на сервере __cpca1server__
-Все дальнейшие шаги мы также будем выполнять удалённо со станции администратора (в нашем случае это хост виртуализации), теперь уже с помощью плейбуков _Ansible_.
+Все дальнейшие шаги также выполняются удалённо со станции администратора (в нашем случае это хост виртуализации), с помощью плейбуков _Ansible_.
 
-Распакуем архив с дистрибутивом _КриптоПро CSP_, установим все необходимые пакеты и __гамму__, 
-которая была предварительно сгенерирована в _КриптоПро CSP_ на рабочей станции _Windows_. _Ansible-playbook_ в данном случае выглядит так:
+Далее следует распаковка архива с дистрибутивом _КриптоПро CSP_, установка всех необходимых пакетов и __гаммы__, 
+которая была предварительно сгенерирована в _КриптоПро CSP_ на рабочей станции _Windows_. 
+
+_Ansible-playbook_ в данном случае выглядит так:
 
 <details>
 <summary>Ansible code</summary>
@@ -448,9 +452,10 @@ Vagrant.configure("2") do |config|
 ```
 </details>
 
-В задаче __"CryptoPro CSP. Extract archive"__ мы распаковываем архив с установочными файлами в предварительно созданный каталог в домашней директории пользователя _Vagrant_.
-Затем с помощью задачи __"CryptoPro CSP. Install Software CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma"__ устанавливаем пакеты и копируем 
-_гамму_ в рабочий каталог.
+В задаче __"CryptoPro CSP. Extract archive"__ описывается распаковка архива с установочными файлами в предварительно созданный каталог в домашней директории пользователя _Vagrant_.
+Затем с помощью задачи __"CryptoPro CSP. Install Software CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma"__ устанавливаются пакеты и копируется 
+_гамма_ в рабочий каталог.
+
 > [!NOTE]
 > Лицензии, которые необходимо ввести на данном шаге, либо приобретаются, либо запрашиваются у вендора в качестве ознакомительных.
 
@@ -521,7 +526,7 @@ _гамму_ в рабочий каталог.
 ```
 </details>
 
-В данном примере мы с помощью утилиты _Apt_ установили из репозитория _Astra Linux_ пакеты _acl_ и _postgresql-client_, создали группу пользователей _crl-writers_ 
+В данном примере с помощью утилиты _Apt_ производится установка из репозитория _Astra Linux_ пакетов _acl_ и _postgresql-client_, создание группы пользователей _crl-writers_ 
 и две учётные записи - _cpca_ и _cpra_.  С правами первой будут работать сервисы _NATS_ и _CryptoPro.Ca.Service_. Учётная запись _cpra_ нужна для 
 работы служб _CryptoPro.Ra.Service_ и _CryptoPro.Ra.Web_.
 
@@ -642,35 +647,35 @@ _гамму_ в рабочий каталог.
 ```
 </details>
 
-Здесь мы с помощью задач: 
-  - __"CryptoPro CA. APT. Install package "unzip" to latest version"__ - установили пакет _unzip_ ;
-  - __"CryptoPro CA. Extract archive"__ - распаковали архив с приложениями;
-  - __"CryptoPro CA. Set ACL privileges for CryptoPro.Ca.Service, CryptoPro.Ra.Service, CryptoPro.Ra.Web"__ - разрешили запуск приложений от имени соответствующих учётных записей;
-  - __"CryptoPro CA. Set ACL privileges for certmgr, cryptcp"__ - разрешили запуск утилит от имени соответствующих учётных записей (необязательное действие - соответствующие файлы по 
-умолчанию имеют бит исполнения для всех категорий пользователей);
-  - __"CryptoPro CA. Set ACL privileges for nats-streaming-server (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)"__ - разрешили 
+Здесь, с помощью задач: 
+  - __"CryptoPro CA. APT. Install package "unzip" to latest version"__ - установился пакет _unzip_ ;
+  - __"CryptoPro CA. Extract archive"__ - был распакован архив с приложениями;
+  - __"CryptoPro CA. Set ACL privileges for CryptoPro.Ca.Service, CryptoPro.Ra.Service, CryptoPro.Ra.Web"__ - разрешён запуск приложений от имени соответствующих учётных записей;
+  - __"CryptoPro CA. Set ACL privileges for certmgr, cryptcp"__ - разрешён запуск утилит от имени соответствующих учётных записей (__необязательное действие - соответствующие файлы по 
+умолчанию имеют бит исполнения для всех категорий пользователей__);
+  - __"CryptoPro CA. Set ACL privileges for nats-streaming-server (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)"__ - разрешён 
 запуск сервиса для пользователя _cpca_;
-  - __"CryptoPro CA. Edit main config for pkica (pkica - Программа настройки УЦ)"__ - настроили подключение к базам данных _Центра Сертификации_ и _Центра Регистрации_, отключили использование
-протокола _TLS_ и задали имя хоста служб _Nats_, _Stan_ для _pkica_;
-  - __"CryptoPro CA. Edit main config (CryptoPro.Ca.Service - Сервис ЦС)"__ - настроили подключение к базе данных _Центра Сертификации_, отключили использование протокола 
-_TLS_, задали имя хоста служб _Nats_, _Stan_ для _CryptoPro.Ca.Service_ и активировали лицензию.
-  - __"CryptoPro RA. Edit main config (CryptoPro.Ra.Service - Сервис ЦР)"__ _ проделали все те же шаги, что и в предыдущем пункте, но для службы _CryptoPro.Ra.Service_.
+  - __"CryptoPro CA. Edit main config for pkica (pkica - Программа настройки УЦ)"__ - было настроено подключение к базам данных _Центра Сертификации_ и _Центра Регистрации_, отключение использование
+протокола _TLS_ и задано имя хоста служб _Nats_, _Stan_ для _pkica_;
+  - __"CryptoPro CA. Edit main config (CryptoPro.Ca.Service - Сервис ЦС)"__ - настроено подключение к базе данных _Центра Сертификации_, отключён протокол 
+_TLS_, задано имя хоста служб _Nats_, _Stan_ для _CryptoPro.Ca.Service_ и активирована лицензия.
+  - __"CryptoPro RA. Edit main config (CryptoPro.Ra.Service - Сервис ЦР)"__ - выполнение всех тех же шагов, что и в предыдущем пункте, но для службы _CryptoPro.Ra.Service_.
 
 #### Создание рабочих каталогов, регистрация новых сервисов на сервере cpca1server
 
-На данном этапе мы создадим каталоги:
+На данном этапе происходит создание каталогов:
   - для хранения очередей (сообщений) - _/var/lib/nats-streaming/pkica-store_;
   - для хранения сертификатов __nats-streaming-server__ - _/opt/cpca/nats-streaming/ssl/_;
   - для публикации __САС__ (список аннулированных сертификатов) - _/var/lib/cpca/cdp_;
   - для хранения журналов __Центра Сертификации__ - _/var/log/cpca_.
 
-Предоставим группе безопасности _crl-writers_ права для установки CRL в хранилище _LocalMachine\CA_ (файл _/var/opt/cprocsp/users/stores/ca.sto_).
+Предоставление группе безопасности _crl-writers_ прав для установки CRL в хранилище _LocalMachine\CA_ (файл _/var/opt/cprocsp/users/stores/ca.sto_).
 
 > Для подключения к NATS/NATS Streaming с использованием TLS необходимо, чтобы в локальном хранилище компьютера «Промежуточные Центры сертификации» (Local Machine\CA)
 > были установлены действующие CRL. Сервис ЦС (CryptoPro.Ca.Service) и другие сервисы, взаимодействующие с ним через NATS Streaming, поддерживают автоматическую установку 
 > выпущенных CRL в это хранилище.[^2]
 
-Зарегистрируем, разрешим загрузку и запустим сервисы _SystemD_:
+Регистрация, разрешение автозагрузки и запуск сервисов _SystemD_:
   - ![nats-streaming-server.service](files/cprokey/nats-streaming-server.service);
   - ![cryptopro.ca.service](files/cprokey/cryptopro.ca.service);
   - ![cryptopro.ra.service](files/cprokey/cryptopro.ra.service).
