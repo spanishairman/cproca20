@@ -845,5 +845,118 @@ WantedBy=multi-user.target
 после чего инициализируется новый экземпляр службы _CA_ с именем _"TRADEINN RETAIL SERVICES CA"_. 
 Далее, для нового экземпляра службы загружаются стандартные шаблоны сертификатов. Для всех указанных действий используется утилита _pkica_.
 
+#### Выпуск сертификата _Администратора Центра сертификации_, установка его в хранилища _Личные_ и _Доверенные корневые..._ для текущего пользователя. Добавление и загрузка ключа
+
+В данном разделе выполняются следующие действия: 
+  - выпуск сертификата _Администратора УЦ_ с установкой его в хранилища _Личные_ - __uMy__ и _Доверенные корневые Центры сертификации_ - __uRoot__. Задачи __CryptoPro CA. Release a new CA certificate__, __CryptoPro CA. Install CA certificate to storages__;
+  - добавление ключа сертфиката _Администратора УЦ_. Задача __CryptoPro CA. Add CA key__;
+  - загрузка ключа сертфиката _Администратора УЦ_. Задача __CryptoPro CA. Load CA key__;
+  - изменение настроек ЦС для выпуска сертификатов __НЭП__ - _неквалифицированной электронной подписи_. Задача __CryptoPro CA. Configure Settings for CA__;
+  - установка сертификата _Администратора УЦ_ в хранилище _Доверенные корневые Центры сертификации_ компьютера - __mRoot__ и перезапуск _Центра сертификации_ с новыми параметрами. Задачи __CryptoPro CA. Install CA certificate to mRoot storage__, __CryptoPro CA. Reload service__;
+  - проверка и, в случае необходимости, загрузка ключа _Администратора УЦ_.
+
+> [!TIP]
+> Последний из приведённых пунктов, а именно - _проверка и, в случае необходимости, загрузка ключа _Администратора УЦ_ является избыточным, так как при изменении настроек 
+> _Центра сертификции_ мы установили значение параметра __AutoLoadKey__ в __true__, благодаря чему загрузка ключа происходит автоматически при загрузке службы _CA_.
+
+Код соответствующего плейбука под спойлером:
+
+<details>
+<summary>Ansible code</summary>
+
+```
+---
+- name: CryptoPro CA | 6. Release, Install, Add and Load a new CA certificate
+  hosts: cpcaserver
+  become: true
+  become_user: cpca
+  vars:
+    caname: "TRADEINN RETAIL SERVICES CA"
+  tasks:
+
+    - name: CryptoPro CA. Release a new CA certificate
+      ansible.builtin.shell: |
+        ./pkica ca new-root-cert --out-file ~/caroot.cer --key-index 0 --subject "CN={{ caname }};O=TRADEINN;C=RU" --container-name cont_ca --no-pin --silent
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/pkica/
+
+    - name: CryptoPro CA. Install CA certificate to storages
+      ansible.builtin.shell: |
+        ./certmgr -install -store uMy -file ~/caroot.cer -provtype 80 -container cont_ca -at_signature
+        yes o | ./certmgr -install -store uRoot -file ~/caroot.cer
+      args:
+        executable: /bin/bash
+        chdir: /opt/cprocsp/bin/amd64/
+
+    - name: CryptoPro CA. Add CA key
+      ansible.builtin.shell: |
+        export PATH=$PATH:/opt/cprocsp/bin/amd64
+        ./pkica ca signing-key add --name "{{ caname }}" --thumbprint $(certmgr -list -file ~/caroot.cer | grep SHA1 | awk '{print $4}') --store-name My --store-location CurrentUser --no-pin
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/pkica/
+
+    - name: Pause for 5 seconds
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: CryptoPro CA. Load CA key
+      ansible.builtin.shell: |
+        ./pkica ca signing-key show -i 0 --status | grep "NotLoaded" && ./pkica ca signing-key load --name "{{ caname }}" --index 0 --no-pin
+      register: signkey_loaded
+      failed_when: signkey_loaded.rc != 0 and signkey_loaded.rc != 1
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/pkica/
+
+    - name: CryptoPro CA. Configure Settings for CA
+      ansible.builtin.shell: |
+        ./pkica ca authority export-settings --name "{{ caname }}" --file ~/settings.txt --format Json
+        sed -i 's/"DisableAkiIssuerNameAndSerial": false/"DisableAkiIssuerNameAndSerial": true/' ~/settings.txt
+        sed -i 's/"QualifiedCertMode": "Full"/"QualifiedCertMode": "AttrFormat"/' ~/settings.txt
+        sed -i 's/"AutoLoadKey": false/"AutoLoadKey": true/' ~/settings.txt
+        ./pkica ca authority import-settings --name "{{ caname }}" --file ~/settings.txt --format Json
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/pkica/
+
+- name: CryptoPro CA | Install CA certificate to mRoot storage. Reload CA service
+  hosts: cpcaserver
+  become: true
+  tasks:
+
+    - name: CryptoPro CA. Install CA certificate to mRoot storage
+      ansible.builtin.shell: |
+        ./certmgr -install -store mRoot -file /home/cpca/caroot.cer
+      args:
+        executable: /bin/bash
+        chdir: /opt/cprocsp/bin/amd64/
+
+    - name: CryptoPro CA. Reload service
+      ansible.builtin.shell: |
+        systemctl restart cryptopro.ca.service
+      args:
+        executable: /bin/bash
+
+- name: CryptoPro CA | Load a CA certificate
+  hosts: cpcaserver
+  become: true
+  become_user: cpca
+  vars:
+    caname: "TRADEINN RETAIL SERVICES CA"
+  tasks:
+
+    - name: CryptoPro CA. Load a CA key
+      ansible.builtin.shell: |
+        ./pkica ca signing-key show -i 0 --status | grep "NotLoaded" && ./pkica ca signing-key load --name "{{ caname }}" --index 0 --no-pin
+      register: signkey_loaded
+      failed_when: signkey_loaded.rc != 0 and signkey_loaded.rc != 1
+      args:
+        executable: /bin/bash
+        chdir: /opt/cpca/pkica/
+```
+</details>
+
 [^1]: ЖТЯИ.00078-03 30 01. ПАК КриптоПро УЦ 2.0. Формуляр. 2. Общие сведения и основные характеристики.
 [^2]: ЖТЯИ.00078-03 90 02. ПАК КриптоПро УЦ 2.0. Руководство по установке. 2.6 Установка CRL в хранилище.
