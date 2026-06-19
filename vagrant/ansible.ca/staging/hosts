@@ -1,0 +1,17 @@
+[cprocaserver]
+cproca ansible_host=192.168.121.11 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Debian121/libvirt/private_key
+ 
+[cproraserver]
+cprora ansible_host=192.168.121.12 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Debian122/libvirt/private_key
+ 
+[cprodbserver]
+cprodb ansible_host=192.168.121.13 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Debian123/libvirt/private_key
+ 
+[caservers:children]
+cprocaserver
+cproraserver
+ 
+[allservers:children]
+cprocaserver
+cproraserver
+cprodbserver
