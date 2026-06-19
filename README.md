@@ -10,7 +10,7 @@
 Стенд, на котором будет развернут комплекс, представляет собой хост-машину, где в качестве гипервизора установлено ПО виртуализации _KVM_ и среда разработки - _Vagrant_.
 Все узлы _Удостоверяющего Центра_ - это _QEMU_-образы виртуальных машин, которые разворачиваются с помощью средств автоматизации и оркестрации _Vagrant_ и _Ansible_.
 
-##### Установка и первоначальная настройка виртуальных машин с помощью _Vagrant_
+#### Установка и первоначальная настройка виртуальных машин с помощью _Vagrant_
 
 > [!NOTE]
 > Создание _Vagrant_-образов виртуальных машин рассматривается в данной [статье](https://github.com/spanishairman/vagrant).
@@ -28,8 +28,8 @@
   - _vagrant-libvirt-inet1_ - изолированная сеть, без выхода в интернет и доступа к каким-либо хостам, включая хост виртуализации;
   - _vagrant-libvirt-mgmt_ - сеть управления, с её помощью выполняется управление виртуальными машинами, а также эта сеть позволяет виртуальным машинам выходить в интернет. 
 
-##### Ansible
-#### Файл hosts
+#### Ansible
+##### Файл hosts
 Описание виртуальных хостов находится в файле [hosts](vagrant/ansible.ca/staging/hosts)
 <details>
 <summary>Клик, чтобы показать код</summary>
@@ -56,7 +56,7 @@ cprodbserver
 
 </details>
 
-#### Файлы описания переменных
+##### Файлы описания переменных
 Описание переменных для серверов УЦ находится в файле [caservers.yml](vagrant/ansible.ca/staging/group_vars/caservers.yml)
 <details>
 <summary>Клик, чтобы показать код</summary>
@@ -75,12 +75,26 @@ dircsp: csp50r2
 cspbase: /opt/cprocsp/
 cspbindir: /opt/cprocsp/bin/amd64/
 cspsbindir: /opt/cprocsp/sbin/amd64/
-
 ```
 
 </details>
 
-#### Установка КриптоПро CSP 5.0 R3
+##### Файл __ansible.cfg__
+Конфигурационный файл [ansible.cfg](vagrant/ansible.ca/ansible.cfg)
+<details>
+<summary>Клик, чтобы показать код</summary>
+
+```
+[defaults]
+inventory = staging/hosts
+remote_user = vagrant
+host_key_checking = False
+retry_files_enabled = False
+```
+
+</details>
+
+##### Установка КриптоПро CSP 5.0 R3
 
 
 
