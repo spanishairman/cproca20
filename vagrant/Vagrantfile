@@ -1,0 +1,102 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+  config.vm.define "Debian121" do |debian121|
+  debian121.vm.box = "/home/max/vagrant/images/debian12"
+  debian121.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.1',
+       :libvirt__netmask => '255.255.255.240',
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  debian121.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "1024"
+      lvirt.cpus = "1"
+      lvirt.title = "Debian121"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Debian Linux 12. CA"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt"
+      lvirt.management_network_address = "192.168.121.0/24"
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:80"
+  end
+  debian121.vm.provision "shell", inline: <<-SHELL
+      brd='*******'
+      echo "$brd"
+      echo 'HELLO!'
+      echo "$brd"
+      hostnamectl set-hostname cproca
+      echo '192.168.1.1 cproca.local cproca' >> /etc/hosts
+      echo '192.168.1.2 cprora.local cprora' >> /etc/hosts
+      echo '192.168.1.3 cprodb.local cprodb' >> /etc/hosts
+      SHELL
+  end
+  config.vm.define "Debian122" do |debian122|
+  debian122.vm.box = "/home/max/vagrant/images/debian12"
+  debian122.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.2',
+       :libvirt__netmask => '255.255.255.240',
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  debian122.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "1024"
+      lvirt.cpus = "1"
+      lvirt.title = "Debian122"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Debian Linux 12. RA"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt"
+      lvirt.management_network_address = "192.168.121.0/24"
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:81"
+  end
+  debian122.vm.provision "shell", inline: <<-SHELL
+      brd='*******'
+      echo "$brd"
+      echo 'HELLO!'
+      echo "$brd"
+      hostnamectl set-hostname cprora
+      echo '192.168.1.1 cproca.local cproca' >> /etc/hosts
+      echo '192.168.1.2 cprora.local cprora' >> /etc/hosts
+      echo '192.168.1.3 cprodb.local cprodb' >> /etc/hosts
+      SHELL
+  end
+  config.vm.define "Debian123" do |debian123|
+  debian123.vm.box = "/home/max/vagrant/images/debian12"
+  debian123.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.3',
+       :libvirt__netmask => '255.255.255.240',
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  debian123.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "1024"
+      lvirt.cpus = "1"
+      lvirt.title = "Debian123"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Debian Linux 12. DB"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt"
+      lvirt.management_network_address = "192.168.121.0/24"
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:82"
+  end
+  debian123.vm.provision "shell", inline: <<-SHELL
+      brd='*******'
+      echo "$brd"
+      echo 'HELLO!'
+      echo "$brd"
+      hostnamectl set-hostname cprodb
+      echo '192.168.1.1 cproca.local cproca' >> /etc/hosts
+      echo '192.168.1.2 cprora.local cprora' >> /etc/hosts
+      echo '192.168.1.3 cprodb.local cprodb' >> /etc/hosts
+      SHELL
+  end
+end
