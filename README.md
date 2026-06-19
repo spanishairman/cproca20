@@ -33,6 +33,7 @@
 Описание виртуальных хостов находится в файле [hosts](vagrant/ansible.ca/staging/hosts)
 <details>
 <summary>Клик, чтобы показать код</summary>
+
 ```
 [cprocaserver]
 cproca ansible_host=192.168.121.11 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Debian121/libvirt/private_key
@@ -52,6 +53,7 @@ cprocaserver
 cproraserver
 cprodbserver
 ```
+
 </details>
 #### Установка КриптоПро CSP 5.0 R3
 
