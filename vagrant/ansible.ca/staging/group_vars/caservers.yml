@@ -1,0 +1,13 @@
+allow_world_readable_tmpfiles: true
+liccsp: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+licocsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+lictsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+csp_distro: linux-amd64_deb.tgz
+src_dirinst: /home/max/vagrant/ansible.ca/files
+dst_dirinst: /home/vagrant/ansible.ca/files
+dst_user: vagrant
+localdir: /home/max/vagrant/ansible.ca
+dircsp: csp50r2
+cspbase: /opt/cprocsp/
+cspbindir: /opt/cprocsp/bin/amd64/
+cspsbindir: /opt/cprocsp/sbin/amd64/

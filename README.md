@@ -55,11 +55,32 @@ cprodbserver
 ```
 
 </details>
+
+#### Файлы описания переменных
+Описание переменных для серверов УЦ находится в файле [caservers.yml](vagrant/ansible.ca/staging/group_vars/caservers.yml)
+<details>
+<summary>Клик, чтобы показать код</summary>
+
+```
+allow_world_readable_tmpfiles: true
+liccsp: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+licocsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+lictsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+csp_distro: linux-amd64_deb.tgz
+src_dirinst: /home/max/vagrant/ansible.ca/files
+dst_dirinst: /home/vagrant/ansible.ca/files
+dst_user: vagrant
+localdir: /home/max/vagrant/ansible.ca
+dircsp: csp50r2
+cspbase: /opt/cprocsp/
+cspbindir: /opt/cprocsp/bin/amd64/
+cspsbindir: /opt/cprocsp/sbin/amd64/
+
+```
+
+</details>
+
 #### Установка КриптоПро CSP 5.0 R3
 
 
-
-> [!NOTE]
-> По списку задач можно заметить, что мы открываем доступ к базам данных для удаленных пользователей с первой и второй ноды сервера _CA_. 
-> Здесь мы предусматриваем дальнейшую настройку кластера высокой доступности _Центра Сертификации_ (в случае необходимости его создания). 
 
