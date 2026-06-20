@@ -162,7 +162,7 @@ retry_files_enabled = False
       tags:
       - license
 
-    - name: CONFIGURE CSP. Generate Gamma.
+    - name: CONFIGURE CSP. Add Gamma.
       ansible.builtin.shell: |
         cp "{{ dst_dirinst }}"/gamma/kis_1 /var/opt/cprocsp/dsrf/db1/
         cp "{{ dst_dirinst }}"/gamma/kis_1 /var/opt/cprocsp/dsrf/db2/
@@ -185,4 +185,11 @@ retry_files_enabled = False
 ```
 
 </details>
+
+Каждому из перечисленных шагов соответсвует уникальный тэг:
+  - extract
+  - install
+  - license
+  - gamma
+  - restart
 
