@@ -187,9 +187,9 @@ retry_files_enabled = False
 </details>
 
 Каждому из перечисленных шагов соответствует уникальный __тэг__:
-  :white_check_mark: extract
-  :white_check_mark: install
-  :white_check_mark: license
-  :white_check_mark: gamma
-  :white_check_mark: restart
+:white_check_mark: extract
+:white_check_mark: install
+:white_check_mark: license
+:white_check_mark: gamma
+:white_check_mark: restart
 
