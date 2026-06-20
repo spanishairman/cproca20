@@ -32,7 +32,7 @@
 #### Файл hosts
 Описание виртуальных хостов находится в файле [hosts](vagrant/ansible.ca/staging/hosts)
 <details>
-<summary>Клик, чтобы показать код</summary>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 [cprocaserver]
@@ -59,7 +59,7 @@ cprodbserver
 #### Файлы описания переменных
 Описание переменных для серверов УЦ находится в файле [caservers.yml](vagrant/ansible.ca/staging/group_vars/caservers.yml)
 <details>
-<summary>Клик, чтобы показать код</summary>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 allow_world_readable_tmpfiles: true
@@ -82,7 +82,7 @@ cspsbindir: /opt/cprocsp/sbin/amd64/
 #### Файл __ansible.cfg__
 Конфигурационный файл [ansible.cfg](vagrant/ansible.ca/ansible.cfg)
 <details>
-<summary>Клик, чтобы показать код</summary>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 [defaults]
@@ -99,7 +99,7 @@ retry_files_enabled = False
 Первым делом необходимо загрузить на управляемые машины дистрибутивы программных продуктов, а также, при необходимости, конфигурационные файлы, гамму для подключения ДСЧ КриптоПро исходный материал и прочее.
 Загрузка осуществляется с помощью плейбука [01.cproca-copy-distr.yml](vagrant/ansible.ca/play/01.cproca-copy-distr.yml)
 <details>
-<summary>Клик, чтобы показать код</summary>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
@@ -121,7 +121,7 @@ retry_files_enabled = False
 ##### Установка
 Далее потребуется распаковать ранее загруженный дистрибутив КриптоПро CSP, запустить вложенный скрипт __install.sh__ с необходимым набором параметров (уровни кс{1,2,3} и набор компонентов), ввести лицензии, добавить гамму и перезапустить службу cprocsp. Все эти шаги выполняет плейбук [02.install-csp.yml](vagrant/ansible.ca/play/02.install-csp.yml)
 <details>
-<summary>Клик, чтобы показать код</summary>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
