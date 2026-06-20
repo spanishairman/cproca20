@@ -117,3 +117,71 @@ retry_files_enabled = False
 ```
 
 </details>
+
+Далее потребуется распаковать ранее загруженный дистрибутив КриптоПро CSP, запустить вложенный скрипт __install.sh__ с необходимым набором параметров (уровни кс{1,2,3} и набор компонентов), ввести лицензии, добавить гамму и перезапустить службу cprocsp. Все эти шаги выполняет плейбук [02.install-csp.yml](vagrant/ansible.ca/play/02.install-csp.yml)
+<details>
+<summary>Клик, чтобы показать код</summary>
+
+```
+---
+- name: <<< PLAYBOOK 02 >>> INSTALL CSP | Extract Archive.
+  hosts: caservers
+  tasks:
+    - name: INSTALL CSP. Extract Archive.
+      ansible.builtin.shell: |
+        test -d "{{ dircsp }}" || mkdir $_
+        tar -C "{{ dircsp }}" -xvzf {{ csp_distro }} --strip-components 1
+      args:
+        executable: /bin/bash
+        chdir: "{{ dst_dirinst }}/"
+      tags:
+      - extract
+
+- name: <<< PLAYBOOK 02 >>> INSTALL CSP | Install distributives CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma.
+  hosts: caservers
+  become: true
+  tasks:
+    - name: INSTALL CSP. Install Software CryptoPro CSP, cprocsp-nginx, lsb-cprocsp-devel, cprocsp-stunnel, cprocsp-pki-cades.
+      ansible.builtin.shell: |
+        ./install.sh kc1 kc2 cprocsp-nginx lsb-cprocsp-devel cprocsp-stunnel cprocsp-pki-cades
+      args:
+        executable: /bin/bash
+        chdir: "{{ dst_dirinst }}/{{ dircsp }}/"
+      tags:
+      - install
+
+    - name: CONFIGURE CSP. Setup Licenses for CSP, OCSP, TSP.
+      ansible.builtin.shell: |
+        sbin/amd64/cpconfig -license -set "{{ liccsp }}"
+        bin/amd64/ocsputil li -s "{{ licocsputils }}"
+        bin/amd64/tsputil li -s "{{ lictsputils }}"
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbase }}"
+      tags:
+      - license
+
+    - name: CONFIGURE CSP. Generate Gamma.
+      ansible.builtin.shell: |
+        cp "{{ dst_dirinst }}"/gamma/kis_1 /var/opt/cprocsp/dsrf/db1/
+        cp "{{ dst_dirinst }}"/gamma/kis_1 /var/opt/cprocsp/dsrf/db2/
+        chmod -R 777 "/var/opt/cprocsp/dsrf/"
+        "{{ cspsbindir }}"/cpconfig -hardware rndm -add cpsd -name 'cpsd rng' -level 3
+        "{{ cspsbindir }}"/cpconfig -hardware rndm -configure cpsd -add string /db1/kis_1 /var/opt/cprocsp/dsrf/db1/kis_1
+        "{{ cspsbindir }}"/cpconfig -hardware rndm -configure cpsd -add string /db2/kis_1 /var/opt/cprocsp/dsrf/db2/kis_1
+      args:
+        executable: /bin/bash
+      tags:
+      - gamma
+
+    - name: CONFIGURE CSP. Restart service cprocsp.
+      ansible.builtin.service:
+        name: cprocsp.service
+        state: restarted
+      tags:
+      - restart
+
+```
+
+</details>
+
