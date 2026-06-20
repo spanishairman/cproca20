@@ -1,0 +1,12 @@
+---
+- name: <<< PLAYBOOK 01 >>> COPY DISTRO | Group of servers "caservers".
+  hosts: caservers
+  become: false
+  tasks:
+  - name: COPY.
+    ansible.builtin.copy:
+      src: "{{ src_dirinst }}/"
+      dest: "{{ dst_dirinst }}"
+      owner: "{{ dst_user }}"
+      group: "{{ dst_user }}"
+      mode: '0644'

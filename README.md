@@ -95,6 +95,25 @@ retry_files_enabled = False
 </details>
 
 ##### Установка КриптоПро CSP 5.0 R3
+###### Копирование файлов установки на управляемые хосты
+Первым делом необходимо загрузить на управляемые машины дистрибутивы программных продуктов, а также, при необходимости, конфигурационные файлы, гамму для подключения ДСЧ КриптоПро исходный материал и прочее.
+Загрузка осуществляется с помощью плейбука [01.cproca-copy-distr.yml](vagrant/ansible.ca/play/01.cproca-copy-distr.yml)
+<details>
+<summary>Клик, чтобы показать код</summary>
 
+```
+---
+- name: <<< PLAYBOOK 01 >>> COPY DISTRO | Group of servers "caservers".
+  hosts: caservers
+  become: false
+  tasks:
+  - name: COPY.
+    ansible.builtin.copy:
+      src: "{{ src_dirinst }}/"
+      dest: "{{ dst_dirinst }}"
+      owner: "{{ dst_user }}"
+      group: "{{ dst_user }}"
+      mode: '0644'
+```
 
-
+</details>
