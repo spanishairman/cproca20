@@ -193,3 +193,32 @@ retry_files_enabled = False
   - :white_check_mark: gamma
   - :white_check_mark: restart
 
+#### Установка PostgreSQL
+Клиентская и серверная часть сервера баз данных устанавливается из репозиториев Debian. Для этого используем плейбук [03.install-postgres.yml](vagrant/ansible.ca/play/03.install-postgres.yml)
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 03 >>> APT. INSTALL POSTGRESQL | Install Client.
+  hosts: caservers
+  become: true
+  tasks:
+  - name: INSTALL POSTGRESQL. Install Client.
+    ansible.builtin.apt:
+      name: acl,postgresql-client,python3-cryptography
+      state: present
+      update_cache: false
+
+- name: <<< PLAYBOOK 03 >>> APT. INSTALL POSTGRESQL | Install Server.
+  hosts: cprodbserver
+  become: true
+  tasks:
+  - name: INSTALL POSTGRESQL. Install Server.
+    ansible.builtin.apt:
+      name: postgresql,python3-psycopg2,acl
+      state: present
+      update_cache: false
+```
+
+</details>
