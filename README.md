@@ -60,9 +60,9 @@ cprodbserver
 Описание переменных для серверов УЦ находится в файле [caservers.yml](vagrant/ansible.ca/staging/group_vars/caservers.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
 ```
 allow_world_readable_tmpfiles: true
+# --- CryptoPro CSP ---
 liccsp: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 licocsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 lictsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
@@ -75,8 +75,21 @@ dircsp: csp50r2
 cspbase: /opt/cprocsp/
 cspbindir: /opt/cprocsp/bin/amd64/
 cspsbindir: /opt/cprocsp/sbin/amd64/
+# --- PostgreSQL ---
+cpca_dbadmin: cpcadbadmin
+cpra_dbadmin: cpradbadmin
 ```
 
+</details>
+
+Описание переменных для сервера баз данных находится в файле [caservers.yml](vagrant/ansible.ca/staging/group_vars/cprodbserver.yml)
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+```
+cpca_dbadmin: cpcadbadmin
+cpra_dbadmin: cpradbadmin
+pg_ver: 15
+```
 </details>
 
 #### Файл __ansible.cfg__
@@ -193,7 +206,7 @@ retry_files_enabled = False
   - :white_check_mark: gamma
   - :white_check_mark: restart
 
-#### Установка PostgreSQL
+#### Установка PostgreSQL Server
 Клиентская и серверная часть сервера баз данных устанавливается из репозиториев Debian. Для этого используем плейбук [03.install-postgres.yml](vagrant/ansible.ca/play/03.install-postgres.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
@@ -222,3 +235,33 @@ retry_files_enabled = False
 ```
 
 </details>
+
+#### Настройка PostgreSQL Server. Предоставление доступа для внешних подключений
+Откроем доступ для подключения к базам данных с удалённых хостов cproca-test и cprora-test. Плейбук [04.postgres-configure.yml](vagrant/ansible.ca/play/04.postgres-configure.yml)
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 04 >>> CONFIGURE POSTGRESQL | Configure Server.
+  hosts: cprodbserver
+  become: true
+  tasks:
+  - name: CONFIGURE POSTGRESQL. Configure Server. Edit pg_hba configuration file. Add "{ cproca-test }" and "{ cprora-test }" access
+    ansible.builtin.postgresql_pg_hba:
+      dest: /etc/postgresql/{{ pg_ver }}/main/pg_hba.conf
+      contype: host
+      users: "{{ item.users }}"
+      source: "{{ item.source }}"
+      databases: all
+      method: md5
+      create: true
+    loop:
+      - { source: "{{ hostvars['cproca-test'].ansible_host }}", users: "{{ cpca_dbadmin }}" }
+      - { source: "{{ hostvars['cprora-test'].ansible_host }}", users: "{{ cpra_dbadmin }}" }
+
+  - name: CONFIGURE POSTGRESQL. Configure Server. Restart service PostgreSQL.
+    ansible.builtin.service:
+      name: postgresql.service
+      state: restarted 
+```

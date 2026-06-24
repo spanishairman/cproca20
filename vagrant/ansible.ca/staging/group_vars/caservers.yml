@@ -1,4 +1,5 @@
 allow_world_readable_tmpfiles: true
+# --- CryptoPro CSP ---
 liccsp: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 licocsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 lictsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
@@ -11,3 +12,6 @@ dircsp: csp50r2
 cspbase: /opt/cprocsp/
 cspbindir: /opt/cprocsp/bin/amd64/
 cspsbindir: /opt/cprocsp/sbin/amd64/
+# --- PostgreSQL ---
+cpca_dbadmin: cpcadbadmin
+cpra_dbadmin: cpradbadmin

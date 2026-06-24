@@ -1,0 +1,3 @@
+cpca_dbadmin: cpcadbadmin
+cpra_dbadmin: cpradbadmin
+pg_ver: 15

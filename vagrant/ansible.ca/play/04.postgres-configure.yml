@@ -1,0 +1,22 @@
+---
+- name: <<< PLAYBOOK 04 >>> CONFIGURE POSTGRESQL | Configure Server.
+  hosts: cprodbserver
+  become: true
+  tasks:
+  - name: CONFIGURE POSTGRESQL. Configure Server. Edit pg_hba configuration file. Add "{ cproca-test }" and "{ cprora-test }" access
+    ansible.builtin.postgresql_pg_hba:
+      dest: /etc/postgresql/{{ pg_ver }}/main/pg_hba.conf
+      contype: host
+      users: "{{ item.users }}"
+      source: "{{ item.source }}/32"
+      databases: all
+      method: md5
+      create: true
+    loop:
+      - { source: "{{ hostvars['cproca'].ansible_host }}", users: "{{ cpca_dbadmin }}" }
+      - { source: "{{ hostvars['cprora'].ansible_host }}", users: "{{ cpra_dbadmin }}" }
+
+  - name: CONFIGURE POSTGRESQL. Configure Server. Restart service PostgreSQL.
+    ansible.builtin.service:
+      name: postgresql.service
+      state: restarted
