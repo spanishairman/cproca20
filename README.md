@@ -60,6 +60,7 @@ cprodbserver
 Описание переменных для серверов УЦ находится в файле [caservers.yml](vagrant/ansible.ca/staging/group_vars/caservers.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
 ```
 allow_world_readable_tmpfiles: true
 # --- CryptoPro CSP ---
@@ -85,6 +86,7 @@ cpra_dbadmin: cpradbadmin
 Описание переменных для сервера баз данных находится в файле [caservers.yml](vagrant/ansible.ca/staging/group_vars/cprodbserver.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
 ```
 cpca_dbadmin: cpcadbadmin
 cpra_dbadmin: cpradbadmin
