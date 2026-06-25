@@ -86,7 +86,7 @@ cpra_db: cpradb
 
 </details>
 
-Описание переменных для сервера баз данных находится в файле [caservers.yml](vagrant/ansible.ca/staging/group_vars/cprodbserver.yml)
+Описание переменных для сервера баз данных находится в файле [cprodbserver.yml](vagrant/ansible.ca/staging/group_vars/cprodbserver.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
