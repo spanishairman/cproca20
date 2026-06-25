@@ -1,0 +1,47 @@
+---
+- name: <<< PLAYBOOK 05 >>> POSTGRESQL | Configure Server.
+  hosts: cprodbserver
+  become: true
+  become_user: postgres
+  tasks:
+    - name: PostgreSQL. Configure Server. Create "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}" users, and grant access to bases create.
+      community.postgresql.postgresql_user:
+        name: "{{ item.name }}"
+        password: "{{ item.password }}"
+        expires: "infinity"
+        role_attr_flags: CREATEDB
+      loop:
+        - { name: "{{ cpca_dbadmin }}", password: "{{ cpca_dbpass }}" }
+        - { name: "{{ cpra_dbadmin }}", password: "{{ cpra_dbpass }}" }
+
+    - name: PostgreSQL. Configure Server. Create a new databases "{{ cpca_db }}" and "{{ cpra_db }}".
+      community.postgresql.postgresql_db:
+        name: "{{ item.name }}"
+        owner: "{{ item.owner }}"
+      loop:
+        - { name: "{{ cpca_db }}", owner: "{{ cpca_dbadmin }}" }
+        - { name: "{{ cpra_db }}", owner: "{{ cpra_dbadmin }}" }
+
+    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}" and "{{ cpra_db }}", grant privileges on databases objects (database) for roles.
+      community.postgresql.postgresql_privs:
+        database: "{{ item.database }}"
+        privs: "{{ item.privs }}"
+        type: "{{ item.type }}"
+        roles: "{{ item.roles }}"
+        grant_option: "{{ item.grant_option }}"
+        state: present
+      loop:
+        - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
+        - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
+
+    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}" and "{{ cpra_db }}", grant privileges on databases objects (schema) for roles.
+      community.postgresql.postgresql_privs:
+        database: "{{ item.database }}"
+        privs: "{{ item.privs }}"
+        type: "{{ item.type }}"
+        roles: "{{ item.roles }}"
+        objs: "{{ item.objs }}"
+        state: present
+      loop:
+        - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
+        - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }

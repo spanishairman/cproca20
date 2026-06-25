@@ -62,16 +62,17 @@ cprodbserver
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
+# --- Global vars ---
 allow_world_readable_tmpfiles: true
+src_dirinst: /home/max/vagrant/ansible.ca/files
+dst_dirinst: /home/vagrant/ansible.ca/files
+dst_user: vagrant
+localdir: /home/max/vagrant/ansible.ca
 # --- CryptoPro CSP ---
 liccsp: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 licocsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 lictsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 csp_distro: linux-amd64_deb.tgz
-src_dirinst: /home/max/vagrant/ansible.ca/files
-dst_dirinst: /home/vagrant/ansible.ca/files
-dst_user: vagrant
-localdir: /home/max/vagrant/ansible.ca
 dircsp: csp50r2
 cspbase: /opt/cprocsp/
 cspbindir: /opt/cprocsp/bin/amd64/
@@ -79,6 +80,8 @@ cspsbindir: /opt/cprocsp/sbin/amd64/
 # --- PostgreSQL ---
 cpca_dbadmin: cpcadbadmin
 cpra_dbadmin: cpradbadmin
+cpca_db: cpcadb
+cpra_db: cpradb
 ```
 
 </details>
@@ -88,9 +91,25 @@ cpra_dbadmin: cpradbadmin
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
+pg_ver: 15
 cpca_dbadmin: cpcadbadmin
 cpra_dbadmin: cpradbadmin
-pg_ver: 15
+cpca_db: cpcadb
+cpra_db: cpradb
+cpca_dbpass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          61646162306362363161663530656231303261623738656639303737386565626133393530356562
+          6632626563316530636131633264326366623035393166650a316635366531636238376564663831
+          39303530313966383431316566666236653563316338373863663063346262616531366663396365
+          3866366131643538370a613631346462396237326663353939326166643431323663333461313464
+          6561
+cpra_dbpass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          61633765316537343938613931623630633166383664643333643535363935633635616339646636
+          3939613062366561313861326337656665306632336666640a396665323235303661613037626334
+          39626130653961623536623162376639636431613466616430616232333863636363623266313662
+          6630643766623438340a373532356635396438613762323336363435616162373338613436323762
+          6133
 ```
 </details>
 
@@ -267,3 +286,62 @@ retry_files_enabled = False
       name: postgresql.service
       state: restarted 
 ```
+
+</details>
+
+#### Настройка PostgreSQL Server. Создание комплекта служебных баз данных и ролей, настройка привилегий
+Создание баз данных и ролей, а так-же, предоставление привилегий для этих ролей на созданных базах. Плейбук [05.postgres-create-dbs-roles.yml](vagrant/ansible.ca/play/05.postgres-create-dbs-roles.yml)
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 05 >>> POSTGRESQL | Configure Server.
+  hosts: cprodbserver
+  become: true
+  become_user: postgres
+  tasks:
+    - name: PostgreSQL. Configure Server. Create "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}" users, and grant access to bases create.
+      community.postgresql.postgresql_user:
+        name: "{{ item.name }}"
+        password: "{{ item.password }}"
+        expires: "infinity"
+        role_attr_flags: CREATEDB
+      loop:
+        - { name: "{{ cpca_dbadmin }}", password: "{{ cpca_dbpass }}" }
+        - { name: "{{ cpra_dbadmin }}", password: "{{ cpra_dbpass }}" }
+
+    - name: PostgreSQL. Configure Server. Create a new databases "{{ cpca_db }}" and "{{ cpra_db }}".
+      community.postgresql.postgresql_db:
+        name: "{{ item.name }}"
+        owner: "{{ item.owner }}"
+      loop:
+        - { name: "{{ cpca_db }}", owner: "{{ cpca_dbadmin }}" }
+        - { name: "{{ cpra_db }}", owner: "{{ cpra_dbadmin }}" }
+
+    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}" and "{{ cpra_db }}", grant privileges on databases objects (database) for roles.
+      community.postgresql.postgresql_privs:
+        database: "{{ item.database }}"
+        privs: "{{ item.privs }}"
+        type: "{{ item.type }}"
+        roles: "{{ item.roles }}"
+        grant_option: "{{ item.grant_option }}"
+        state: present
+      loop:
+        - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
+        - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
+
+    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}" and "{{ cpra_db }}", grant privileges on databases objects (schema) for roles.
+      community.postgresql.postgresql_privs:
+        database: "{{ item.database }}"
+        privs: "{{ item.privs }}"
+        type: "{{ item.type }}"
+        roles: "{{ item.roles }}"
+        objs: "{{ item.objs }}"
+        state: present
+      loop:
+        - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
+        - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
+```
+
+</details>
