@@ -1,0 +1,85 @@
+---
+- name: <<< PLAYBOOK 06 >>> CPROCA AND CPRORA Servers | Create group crl-writers and set ACLs. Create user with admins privileges
+  hosts: caservers
+  become: true
+  tasks:
+    - name: CryptoPro CA. Ensure group "crl-writers" exists
+      ansible.builtin.group:
+        name: crl-writers
+        state: present
+
+    - name: CryptoPro CA. Set ACL privileges for crl-writers group on "{{ mstore_ca }}"
+      ansible.posix.acl:
+        path: "{{ mstore_ca }}"
+        entity: crl-writers
+        etype: group
+        permissions: rw
+        default: false
+        recursive: false
+        state: present
+
+    - name: CREATE ADMIN ACCOUNT. Add the user "{{ admin_acc }}" with a bash shell and with homedir
+      ansible.builtin.user:
+        name: "{{ admin_acc }}"
+        password: "{{ admin_acc_pass }}"
+        comment: CryptoPro CA Admin Account
+        shell: /bin/bash
+        create_home: true
+
+- name: <<< PLAYBOOK 06 >>> CPROCA | Create CryptoPro Ca service login
+  hosts: cprocaserver
+  become: true
+  tasks:
+    - name: CryptoPro CA. Add the user "{{ cpca_srv_acc }}" with a bash shell, appending the group 'crl-writers' and to the user's groups
+      ansible.builtin.user:
+        name: "{{ cpca_srv_acc }}"
+        password: '!'
+        comment: CryptoPro CA Service
+        shell: /bin/bash
+        create_home: yes
+        groups: crl-writers
+        append: yes
+
+    - name: CryptoPro CA. Create .pgpass file for "{{ cpca_srv_acc }}"
+      ansible.builtin.shell: |
+        echo '# host:port:database:user:password' > /home/"{{ cpca_srv_acc }}"/.pgpass
+        echo "{{ pg_address }}:5432:*:{{ cpca_dbadmin }}:{{ cpca_dbpass }}" >> /home/"{{ cpca_srv_acc }}"/.pgpass
+        echo "{{ pg_address }}:5432:*:{{ cpra_dbadmin }}:{{ cpra_dbpass }}" >> /home/"{{ cpca_srv_acc }}"/.pgpass
+      args:
+        executable: /bin/bash
+
+    - name: Cproca. Chmod .pgpass
+      ansible.builtin.file:
+        path: "/home/{{ cpca_srv_acc }}/.pgpass"
+        owner: "{{ cpca_srv_acc }}"
+        group: "{{ cpca_srv_acc }}"
+        mode: '0600'
+
+- name: <<< PLAYBOOK 06 >>> CPRORA | Create user CryptoPro Ra service login
+  hosts: cproraserver
+  become: true
+  tasks:
+    - name: CryptoPro RA. Add the user "{{ cpra_srv_acc }}" with a bash shell
+      ansible.builtin.user:
+        name: "{{ cpra_srv_acc }}"
+        password: '!'
+        comment: CryptoPro RA Service
+        shell: /bin/bash
+        create_home: yes
+        groups: crl-writers
+        append: yes
+
+    - name: CryptoPro RA. Create .pgpass file for "{{ cpra_srv_acc }}"
+      ansible.builtin.shell: |
+        echo "# host:port:database:user:password" > /home/"{{ cpra_srv_acc }}"/.pgpass
+        echo "{{ pg_address }}:5432:*:{{ cpra_dbadmin }}:{{ cpra_dbpass }}" >> /home/"{{ cpra_srv_acc }}"/.pgpass
+        echo "{{ pg_address }}:5432:*:{{ cpca_dbadmin }}:{{ cpca_dbpass }}" >> /home/"{{ cpra_srv_acc }}"/.pgpass
+      args:
+        executable: /bin/bash
+
+    - name: Cprora. Chmod .pgpass
+      ansible.builtin.file:
+        path: "/home/{{ cpra_srv_acc }}/.pgpass"
+        owner: "{{ cpra_srv_acc }}"
+        group: "{{ cpra_srv_acc }}"
+        mode: '0600'
