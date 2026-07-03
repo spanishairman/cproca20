@@ -355,6 +355,8 @@ retry_files_enabled = False
         - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
         - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
 ```
+</details>
+
 #### Центр сертификации и Центр регистрации. Создание группы безопасности и служебных пользователей. Настройка файлов аутентификации на сервере баз данных
 Для установки CRL в хранилище LocalMachine\CA на серверах Центра Сертификации и Центра Регистрации создается группа crl-writers. В эту группу добавляется служебный пользователь, с правами которого работают службы ЦС и ЦР.
 Так же, для служебных учетных записей настраивается подключение к базам данных. Плейбук [06.cproca-create-groups-users.yml](vagrant/ansible.ca/play/06.cproca-create-groups-users.yml):
