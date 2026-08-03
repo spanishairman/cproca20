@@ -10,7 +10,7 @@
 Стенд, на котором будет развернут комплекс, представляет собой хост-машину, где в качестве гипервизора установлено ПО виртуализации _KVM_ и среда разработки - _Vagrant_.
 Все узлы _Удостоверяющего Центра_ - это _QEMU_-образы виртуальных машин, которые разворачиваются с помощью средств автоматизации и оркестрации _Vagrant_ и _Ansible_.
 
-### Установка и первоначальная настройка виртуальных машин с помощью _Vagrant_
+### Установка и предварительная настройка виртуальных машин с помощью _Vagrant_
 
 > [!NOTE]
 > Создание _Vagrant_-образов виртуальных машин рассматривается в данной [статье](https://github.com/spanishairman/vagrant).
@@ -94,6 +94,25 @@ admin_acc_pass: !vault |
 mstore_ca: /var/opt/cprocsp/users/stores/ca.sto
 cpca_srv_acc: cpca-srv
 cpra_srv_acc: cpra-srv
+cabase: /opt/cpca
+cadistro: ca-linux-x64-1.63.0.32.zip
+casrvbase: /opt/cpca/CryptoPro.Ca.Service
+rasrvbase: /opt/cpca/CryptoPro.Ra.Service
+rawebbase: /opt/cpca/CryptoPro.Ra.Web
+rawebuibase: /opt/cpca/CryptoPro.Ra.Web.Ui
+pkicabase: /opt/cpca/pkica
+casrvsbin: CryptoPro.Ca.Service
+rasrvsbin: CryptoPro.Ra.Service
+rawebsbin: CryptoPro.Ra.Web
+pkicabin: pkica
+natsbase: /opt/cpca/nats-streaming
+natssbin: nats-streaming-server
+ca_address: 192.168.1.1
+ca_hostname: cproca
+ra_address: 192.168.1.2
+ra_hostname: cprora
+pg_address: 192.168.1.3
+pg_hostname: cprodb
 ```
 
 </details>
@@ -451,3 +470,86 @@ retry_files_enabled = False
         mode: '0600'
 ```
 </details>
+
+#### Центр сертификации и Центр регистрации. Распаковка дистрибутива, копирование файлов в рабочую директорию. Установка разрешений
+Установка службы Центра Сертификации, как и Центра Регистрации - это простое копирование содержимого архива ca-linux-x64-x.xx.x.xx.zip в каталог /opt/cpca.
+
+После копирования необходимо дать сервисным учетным записям __cpca-srv__ и __cpra-srv__ права на запуск соответствующих исполняемых файлов - **CryptoPro.Ca.Service**, **CryptoPro.Ra.Service** и **CryptoPro.Ra.Web**. 
+Плейбук [07.cproca-extract-distro-set-permissions.yml](vagrant/ansible.ca/play/07.cproca-extract-distro-set-permissions.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 07 >>> CPROCA and CPRORA | Install package CPCA.
+  hosts: caservers
+  become: true
+  tasks:
+    - name: CryptoPro CA. APT. Install package "unzip" to latest version
+      ansible.builtin.apt:
+        name: unzip
+        state: present
+        update_cache: false
+
+    - name: CryptoPro CA. Extract archive.
+      ansible.builtin.shell: |
+        test -d "{{ cabase }}" || mkdir $_
+        unzip -o -d "{{ cabase }}" "{{ cadistro }}"
+      args:
+        executable: /bin/bash
+        chdir: "{{ dst_dirinst }}"
+
+- name: <<< PLAYBOOK 07 >>> CPROCA | Set permissions and ACL privileges for CryptoPro.Ca.Service and Pkica util
+  hosts: cprocaserver
+  become: true
+  tasks:
+    - name: CryptoPro CA. Chmod {{ cabase }}
+      ansible.builtin.file:
+        path: "{{ cabase }}"
+        group: "{{ cpca_srv_acc }}"
+        mode: o-rwx
+        recurse: true
+
+    - name: CryptoPro CA. Set ACL privileges for PkiCA, CryptoPro.Ca.Service, Nats-Streaming
+      ansible.posix.acl:
+        path: "{{ item.path }}"
+        entity: "{{ item.entity }}"
+        etype: "{{ item.etype }}"
+        permissions: "{{ item.permissions }}"
+        default: "{{ item.default }}"
+        recursive: "{{ item.recursive }}"
+        state: "{{ item.state }}"
+      loop:
+        - { path: "{{ casrvbase }}/{{ casrvsbin }}", entity: "{{ cpca_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ cpca_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ admin_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ natsbase }}/{{ natssbin }}", entity: "{{ cpca_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+
+- name: <<< PLAYBOOK 07 >>> CPRORA | Set permissions and ACL privileges for CryptoPro.Ra.Service and Pkica util
+  hosts: cproraserver
+  become: true
+  tasks:
+    - name: CryptoPro RA. Chmod {{ cabase }}
+      ansible.builtin.file:
+        path: "{{ cabase }}"
+        group: "{{ cpra_srv_acc }}"
+        mode: o-rwx
+        recurse: true
+    - name: CryptoPro RA. Set ACL privileges for CryptoPro.Ra.Service, CryptoPro.Ra.Web
+      ansible.posix.acl:
+        path: "{{ item.path }}"
+        entity: "{{ item.entity }}"
+        etype: "{{ item.etype }}"
+        permissions: "{{ item.permissions }}"
+        default: "{{ item.default }}"
+        recursive: "{{ item.recursive }}"
+        state: "{{ item.state }}"
+      loop:
+        - { path: "{{ rasrvbase }}/{{ rasrvsbin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ rawebbase }}/{{ rawebsbin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ admin_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+
+```
+</details>
+

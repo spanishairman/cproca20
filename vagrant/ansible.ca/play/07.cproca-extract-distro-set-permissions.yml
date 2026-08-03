@@ -1,0 +1,69 @@
+---
+- name: <<< PLAYBOOK 07 >>> CPROCA and CPRORA | Install package CPCA.
+  hosts: caservers
+  become: true
+  tasks:
+    - name: CryptoPro CA. APT. Install package "unzip" to latest version
+      ansible.builtin.apt:
+        name: unzip
+        state: present
+        update_cache: false
+
+    - name: CryptoPro CA. Extract archive.
+      ansible.builtin.shell: |
+        test -d "{{ cabase }}" || mkdir $_
+        unzip -o -d "{{ cabase }}" "{{ cadistro }}"
+      args:
+        executable: /bin/bash
+        chdir: "{{ dst_dirinst }}"
+
+- name: <<< PLAYBOOK 07 >>> CPROCA | Set permissions and ACL privileges for CryptoPro.Ca.Service and Pkica util
+  hosts: cprocaserver
+  become: true
+  tasks:
+    - name: CryptoPro CA. Chmod {{ cabase }}
+      ansible.builtin.file:
+        path: "{{ cabase }}"
+        group: "{{ cpca_srv_acc }}"
+        mode: o-rwx
+        recurse: true
+
+    - name: CryptoPro CA. Set ACL privileges for PkiCA, CryptoPro.Ca.Service, Nats-Streaming
+      ansible.posix.acl:
+        path: "{{ item.path }}"
+        entity: "{{ item.entity }}"
+        etype: "{{ item.etype }}"
+        permissions: "{{ item.permissions }}"
+        default: "{{ item.default }}"
+        recursive: "{{ item.recursive }}"
+        state: "{{ item.state }}"
+      loop:
+        - { path: "{{ casrvbase }}/{{ casrvsbin }}", entity: "{{ cpca_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ cpca_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ admin_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ natsbase }}/{{ natssbin }}", entity: "{{ cpca_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+
+- name: <<< PLAYBOOK 07 >>> CPRORA | Set permissions and ACL privileges for CryptoPro.Ra.Service and Pkica util
+  hosts: cproraserver
+  become: true
+  tasks:
+    - name: CryptoPro RA. Chmod {{ cabase }}
+      ansible.builtin.file:
+        path: "{{ cabase }}"
+        group: "{{ cpra_srv_acc }}"
+        mode: o-rwx
+        recurse: true
+    - name: CryptoPro RA. Set ACL privileges for CryptoPro.Ra.Service, CryptoPro.Ra.Web
+      ansible.posix.acl:
+        path: "{{ item.path }}"
+        entity: "{{ item.entity }}"
+        etype: "{{ item.etype }}"
+        permissions: "{{ item.permissions }}"
+        default: "{{ item.default }}"
+        recursive: "{{ item.recursive }}"
+        state: "{{ item.state }}"
+      loop:
+        - { path: "{{ rasrvbase }}/{{ rasrvsbin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ rawebbase }}/{{ rawebsbin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ admin_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
