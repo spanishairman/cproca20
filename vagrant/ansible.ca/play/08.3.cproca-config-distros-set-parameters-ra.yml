@@ -1,0 +1,19 @@
+---
+- name: <<< PLAYBOOK 08.3 >>> CPRORA | Config appsettings.json
+  hosts: cproraserver
+  become: true
+  tasks:
+    - name: CryptoPro RA. Edit main config (CryptoPro.Ra.Service - Сервис ЦР)
+      ansible.builtin.shell: |
+        sed -i "s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpra_db }};Username={{ cpra_dbadmin }};Pooling=True/" appsettings.json
+        sed -i '/nats/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i '/ClientID/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i "/Nats/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+        sed -i 's/"PublishCrls": false/"PublishCrls": true/' appsettings.json
+        sed -i 's/"PublishCaCerts": false/"PublishCaCerts": true/' appsettings.json
+        sed -i "s/\"SerialNumber\": \"\"/\"SerialNumber\": \"{{ licra }}\"/" appsettings.json
+        sed -i 's/"Company": ""/"Company": "{{ company }}"/' appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ rasrvbase }}"

@@ -1,0 +1,25 @@
+---
+- name: <<< PLAYBOOK 08.4 >>> CPRORA | Config appsettings.json
+  hosts: cproraserver
+  become: true
+  tasks:
+    - name: CryptoPro RA. Edit main config (CryptoPro.Ra.Web - Веб интерфейс RA)
+      ansible.builtin.shell: |
+        sed -i "s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpra_db }};Username={{ cpra_dbadmin }};Pooling=True/" appsettings.json
+        sed -i '/nats/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i '/ClientID/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i "s/localhost:5000/$HOSTNAME:5000/" appsettings.json
+        sed -i "/Nats/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+        sed -i "s/\"SerialNumber\": \"\"/\"SerialNumber\": \"{{ licra }}\"/" appsettings.json
+        sed -i 's/"Company": ""/"Company": "{{ company }}"/' appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ rawebbase }}"
+
+    - name: CryptoPro RA. Edit main config (CryptoPro.Ra.Web.UI - Веб интерфейс RA)
+      ansible.builtin.shell: |
+        sed -i "s/ra.example/$HOSTNAME/" init.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ rawebuibase }}"

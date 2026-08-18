@@ -19,6 +19,9 @@ cpra_dbadmin: cpradbadmin
 cpca_db: cpcadb
 cpra_db: cpradb
 # --- CryptoPro CA/RA ---
+company: АО \\"GAMMA-TRADE\\"
+licca: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+licra: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 admin_acc: cpca-admin
 admin_acc_pass: !vault |
           $ANSIBLE_VAULT;1.1;AES256

@@ -1,0 +1,24 @@
+---
+- name: <<< PLAYBOOK 08.1 >>> CPROCA AND CPRORA | Config pkica appsettings.json.
+  hosts: caservers
+  become: true
+  tasks:
+    - name: CryptoPro CA and RA. Edit main config for pkica (pkica - Программа настройки УЦ)
+      ansible.builtin.shell: |
+        sed -i "/CaDb/{n;n;s/Server=localhost;Database=Ca;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpca_db }};Username={{ cpca_dbadmin }};Pooling=True/}" appsettings.json
+        sed -i 's/"Secure": true/"Secure": false/' appsettings.json
+        sed -i "/Nats/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/$HOSTNAME/}" appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+
+    - name: CryptoPro CA and RA. Edit main config for pkica (pkica - Программа настройки УЦ)
+      ansible.builtin.shell: |
+        sed -i "/RaDb/{n;n;s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpra_db }};Username={{ cpra_dbadmin }};Pooling=True/}" appsettings.json
+        sed -i 's/"Secure": true/"Secure": false/' appsettings.json
+        sed -i "/Nats/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"

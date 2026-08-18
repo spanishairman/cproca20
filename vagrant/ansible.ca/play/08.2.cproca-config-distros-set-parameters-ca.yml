@@ -1,0 +1,25 @@
+---
+- name: <<< PLAYBOOK 08.2 >>> CPROCA | Config appsettings.json.
+  hosts: cprocaserver
+  become: true
+  tasks:
+    - name: CryptoPro CA. Edit main config (CryptoPro.Ca.Service - Сервис ЦС)
+      ansible.builtin.shell: |
+        sed -i "s/Server=localhost;Database=Ca;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpca_db }};Username={{ cpca_dbadmin }};Pooling=True/" appsettings.json
+        sed -i '/nats/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i '/ClientID/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i "/Nats/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i "s/\"SerialNumber\": \"\"/\"SerialNumber\": \"{{ licca }}\"/" appsettings.json
+        sed -i 's/"Company": ""/"Company": "{{ company }}"/' appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ casrvbase }}"
+
+    - name: CryptoPro CA. Edit nats-streaming-server daemon config (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)
+      ansible.builtin.shell: |
+        sed -i "s/ca.example/$HOSTNAME/" nats.no-tls.conf
+        sed -i "s/ca.example/{{ inventory_hostname }}/" nats.conf
+      args:
+        executable: /bin/bash
+        chdir: "{{ natsbase }}"

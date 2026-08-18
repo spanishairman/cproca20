@@ -553,3 +553,149 @@ retry_files_enabled = False
 ```
 </details>
 
+#### Установка параметров для служб Центра сертификации и Центра регистрации
+Для утилиты настройки Удостоверяющего Центра - __Pkica__, сервиса **Центра Сертификации** и сервиса **Центра Регистрации** основные настройки находятся в файлах __appsettings.json__, располагающихся в соответствующих каталогах:
+
+- /opt/cpca/pkica/appsettings.json - файл конфигурации pkica - программы настройки УЦ;
+- /opt/cpca/CryptoPro.Ca.Service/appsettings.json - файл конфигурации CryptoPro.Ca.Service - сервиса ЦС
+- /opt/cpca/CryptoPro.Ra.Service/appsettings.json - файл конфигурации CryptoPro.Ra.Service - сервиса ЦР.
+
+С помощью следующих плейбуков каждый файл в этих каталогах приводится в актуальное для работы состояние:
+ - play/08.1.cproca-config-distros-set-parameters-pkica.yml;
+ - play/08.2.cproca-config-distros-set-parameters-ca.yml;
+ - play/08.3.cproca-config-distros-set-parameters-ra.yml;
+ - play/08.4.cproca-config-distros-set-parameters-raweb.yml.
+
+Плейбук [play/08.1.cproca-config-distros-set-parameters-pkica.yml](vagrant/ansible.ca/play/08.1.cproca-config-distros-set-parameters-pkica.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 08.1 >>> CPROCA AND CPRORA | Config pkica appsettings.json.
+  hosts: caservers
+  become: true
+  tasks:
+    - name: CryptoPro CA and RA. Edit main config for pkica (pkica - Программа настройки УЦ)
+      ansible.builtin.shell: |
+        sed -i "/CaDb/{n;n;s/Server=localhost;Database=Ca;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpca_db }};Username={{ cpca_dbadmin }};Pooling=True/}" appsettings.json
+        sed -i 's/"Secure": true/"Secure": false/' appsettings.json
+        sed -i "/Nats/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/$HOSTNAME/}" appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+
+    - name: CryptoPro CA and RA. Edit main config for pkica (pkica - Программа настройки УЦ)
+      ansible.builtin.shell: |
+        sed -i "/RaDb/{n;n;s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpra_db }};Username={{ cpra_dbadmin }};Pooling=True/}" appsettings.json
+        sed -i 's/"Secure": true/"Secure": false/' appsettings.json
+        sed -i "/Nats/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+```
+</details>
+
+Здесь мы для службы __Pkica__ отредактировали строку подключения к базам Центра сертификации и Центра регистрации - блоки парметров __CaDb__ и __RaDb__, соответственно, отключили опцию шифрования, 
+а так же изменили адреса, на которых работают службы __Nats__ и __Stan__. 
+
+Плейбук [play/08.2.cproca-config-distros-set-parameters-ca.yml](vagrant/ansible.ca/play/08.2.cproca-config-distros-set-parameters-ca.yml):
+<details> 
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 08.2 >>> CPROCA | Config appsettings.json.
+  hosts: cprocaserver
+  become: true
+  tasks:
+    - name: CryptoPro CA. Edit main config (CryptoPro.Ca.Service - Сервис ЦС)
+      ansible.builtin.shell: |
+        sed -i "s/Server=localhost;Database=Ca;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpca_db }};Username={{ cpca_dbadmin }};Pooling=True/" appsettings.json
+        sed -i '/nats/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i '/ClientID/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i "/Nats/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/$HOSTNAME/}" appsettings.json
+        sed -i "s/\"SerialNumber\": \"\"/\"SerialNumber\": \"{{ licca }}\"/" appsettings.json
+        sed -i 's/"Company": ""/"Company": "{{ company }}"/' appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ casrvbase }}"
+
+    - name: CryptoPro CA. Edit nats-streaming-server daemon config (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)
+      ansible.builtin.shell: |
+        sed -i "s/ca.example/$HOSTNAME/" nats.no-tls.conf
+        sed -i "s/ca.example/{{ inventory_hostname }}/" nats.conf
+      args:
+        executable: /bin/bash
+        chdir: "{{ natsbase }}"
+```
+</details>
+Здесь мы для службы __CryptoPro CA__ отредактировали строку подключения к базе данных Центра сертификации, отключили шифрование для подключения к службе __Nats__, ввели серийный номер и название компании.
+Так же, изменили адрес, на котором работает служба __nats-streaming-server__.
+
+Плейбук [play/08.3.cproca-config-distros-set-parameters-ra.yml](vagrant/ansible.ca/play/08.3.cproca-config-distros-set-parameters-ra.yml):
+<details> 
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 08.3 >>> CPRORA | Config appsettings.json
+  hosts: cproraserver
+  become: true
+  tasks:
+    - name: CryptoPro RA. Edit main config (CryptoPro.Ra.Service - Сервис ЦР)
+      ansible.builtin.shell: |
+        sed -i "s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpra_db }};Username={{ cpra_dbadmin }};Pooling=True/" appsettings.json
+        sed -i '/nats/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i '/ClientID/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i "/Nats/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+        sed -i 's/"PublishCrls": false/"PublishCrls": true/' appsettings.json
+        sed -i 's/"PublishCaCerts": false/"PublishCaCerts": true/' appsettings.json
+        sed -i "s/\"SerialNumber\": \"\"/\"SerialNumber\": \"{{ licra }}\"/" appsettings.json
+        sed -i 's/"Company": ""/"Company": "{{ company }}"/' appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ rasrvbase }}"
+```
+</details>
+
+Здесь выполняются те же действия, что и в предыдущем плейбуке, но для службы __CryptoPro.Ra.Service__, дополнительно задаются настройки для публикации списков отзыва и сертификата УЦ.
+
+Плейбук [play/08.4.cproca-config-distros-set-parameters-raweb.yml](vagrant/ansible.ca/play/08.4.cproca-config-distros-set-parameters-raweb.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 08.4 >>> CPRORA | Config appsettings.json
+  hosts: cproraserver
+  become: true
+  tasks:
+    - name: CryptoPro RA. Edit main config (CryptoPro.Ra.Web - Веб интерфейс RA)
+      ansible.builtin.shell: |
+        sed -i "s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpra_db }};Username={{ cpra_dbadmin }};Pooling=True/" appsettings.json
+        sed -i '/nats/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i '/ClientID/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
+        sed -i "s/localhost:5000/$HOSTNAME:5000/" appsettings.json
+        sed -i "/Nats/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+        sed -i "/Stan/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
+        sed -i "s/\"SerialNumber\": \"\"/\"SerialNumber\": \"{{ licra }}\"/" appsettings.json
+        sed -i 's/"Company": ""/"Company": "{{ company }}"/' appsettings.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ rawebbase }}"
+
+    - name: CryptoPro RA. Edit main config (CryptoPro.Ra.Web.UI - Веб интерфейс RA)
+      ansible.builtin.shell: |
+        sed -i "s/ra.example/$HOSTNAME/" init.json
+      args:
+        executable: /bin/bash
+        chdir: "{{ rawebuibase }}"
+```
+</details>
+
+Здесь задаются настройки веб-служб __Центра регистрации__.
