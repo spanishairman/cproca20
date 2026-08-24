@@ -1,0 +1,30 @@
+---
+- name: <<< PLAYBOOK 09.1 >>> CPROCA AND CPRORA | Config "ConnectionString" parameter for Pkica and Ca appsettings.json.
+  hosts: cprocaserver
+  become: true
+  tasks:
+    - name: CryptoPro CA. Edit pkica, ca appsettings.json.
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.ss }}"
+        firstmatch: false
+        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
+      loop:
+        - { backup: true,  path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ca", after: "CaDb", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=CertRegistry", after: "CertRegistryDb", server: "{{ pg_address }}", database:  "{{ certreg_db }}", username: "{{ cpca_dbadmin }}" }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ra",after: "RaDb", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
+        - { backup: true, path: "{{ casrvbase }}/appsettings.json", ss: "Database=Ca", after: "CaDb", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
+
+    - name: CryptoPro CA. Edit pkica, ca appsettings.json.
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.search }}"
+        firstmatch: "{{ item.fm }}"
+        line: '{{ item.line }}'
+      loop:
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Url", fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Url", fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
