@@ -20,9 +20,10 @@
         owner: "{{ item.owner }}"
       loop:
         - { name: "{{ cpca_db }}", owner: "{{ cpca_dbadmin }}" }
+        - { name: "{{ certreg_db }}", owner: "{{ cpca_dbadmin }}" }
         - { name: "{{ cpra_db }}", owner: "{{ cpra_dbadmin }}" }
 
-    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}" and "{{ cpra_db }}", grant privileges on databases objects (database) for roles.
+    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}", "{{ certreg_db }}" and "{{ cpra_db }}", grant privileges on databases objects (database) for roles.
       community.postgresql.postgresql_privs:
         database: "{{ item.database }}"
         privs: "{{ item.privs }}"
@@ -32,9 +33,10 @@
         state: present
       loop:
         - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
+        - { database: "{{ certreg_db }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
         - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
 
-    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}" and "{{ cpra_db }}", grant privileges on databases objects (schema) for roles.
+    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}", "{{ certreg_db }}" and "{{ cpra_db }}", grant privileges on databases objects (schema) for roles.
       community.postgresql.postgresql_privs:
         database: "{{ item.database }}"
         privs: "{{ item.privs }}"
@@ -44,4 +46,5 @@
         state: present
       loop:
         - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
+        - { database: "{{ certreg_db }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
         - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }

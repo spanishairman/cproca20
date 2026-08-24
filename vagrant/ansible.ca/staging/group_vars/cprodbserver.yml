@@ -3,6 +3,7 @@ cpca_dbadmin: cpcadbadmin
 cpra_dbadmin: cpradbadmin
 cpca_db: cpcadb
 cpra_db: cpradb
+certreg_db: CertRegistry
 cpca_dbpass: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           61646162306362363161663530656231303261623738656639303737386565626133393530356562

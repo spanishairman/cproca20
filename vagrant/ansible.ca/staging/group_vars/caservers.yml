@@ -18,6 +18,7 @@ cpca_dbadmin: cpcadbadmin
 cpra_dbadmin: cpradbadmin
 cpca_db: cpcadb
 cpra_db: cpradb
+certreg_db: CertRegistry
 # --- CryptoPro CA/RA ---
 company: АО \\"GAMMA-TRADE\\"
 licca: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
