@@ -11,10 +11,10 @@
         firstmatch: false
         line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
       loop:
-        - { backup: true,  path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ca", after: "CaDb", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=CertRegistry", after: "CertRegistryDb", server: "{{ pg_address }}", database:  "{{ certreg_db }}", username: "{{ cpca_dbadmin }}" }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ra",after: "RaDb", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
-        - { backup: true, path: "{{ casrvbase }}/appsettings.json", ss: "Database=Ca", after: "CaDb", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
+        - { backup: true,  path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=CertRegistry", server: "{{ pg_address }}", database:  "{{ certreg_db }}", username: "{{ cpca_dbadmin }}" }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ra", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
+        - { backup: true, path: "{{ casrvbase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
 
     - name: CryptoPro CA. Edit pkica, ca appsettings.json.
       ansible.builtin.lineinfile:
