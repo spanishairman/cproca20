@@ -561,7 +561,7 @@ retry_files_enabled = False
 - /opt/cpca/CryptoPro.Ra.Service/appsettings.json - файл конфигурации CryptoPro.Ra.Service - сервиса ЦР.
 
 С помощью следующих плейбуков каждый файл в этих каталогах приводится в актуальное для работы состояние:
- - play/08.1.cproca-config-distros-set-parameters-pkica.yml;
+ - play/08.1.cproca-config-distros-set-parameters-pkica.yml - задаёт параметры подключения к базам данных и опции шифрования для утилиты __pkica__;
  - play/08.2.cproca-config-distros-set-parameters-ca.yml;
  - play/08.3.cproca-config-distros-set-parameters-ra.yml;
  - play/08.4.cproca-config-distros-set-parameters-raweb.yml.
@@ -572,6 +572,7 @@ retry_files_enabled = False
 
 ```
 ---
+---
 - name: <<< PLAYBOOK 08.1 >>> CPROCA AND CPRORA | Config pkica appsettings.json.
   hosts: caservers
   become: true
@@ -579,15 +580,7 @@ retry_files_enabled = False
     - name: CryptoPro CA and RA. Edit main config for pkica (pkica - Программа настройки УЦ)
       ansible.builtin.shell: |
         sed -i "/CaDb/{n;n;s/Server=localhost;Database=Ca;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpca_db }};Username={{ cpca_dbadmin }};Pooling=True/}" appsettings.json
-        sed -i 's/"Secure": true/"Secure": false/' appsettings.json
-        sed -i "/Nats/{n;s/localhost/$HOSTNAME/}" appsettings.json
-        sed -i "/Stan/{n;s/localhost/$HOSTNAME/}" appsettings.json
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-
-    - name: CryptoPro CA and RA. Edit main config for pkica (pkica - Программа настройки УЦ)
-      ansible.builtin.shell: |
+        sed -i "/CertRegistryDb/{n;n;s/Server=localhost;Database=CertRegistry;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ certreg_db }};Username={{ cpca_dbadmin }};Pooling=True/}" appsettings.json
         sed -i "/RaDb/{n;n;s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpra_db }};Username={{ cpra_dbadmin }};Pooling=True/}" appsettings.json
         sed -i 's/"Secure": true/"Secure": false/' appsettings.json
         sed -i "/Nats/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
@@ -598,8 +591,15 @@ retry_files_enabled = False
 ```
 </details>
 
-Здесь мы для службы __Pkica__ отредактировали строку подключения к базам Центра сертификации и Центра регистрации - блоки парметров __CaDb__ и __RaDb__, соответственно, отключили опцию шифрования, 
-а так же изменили адреса, на которых работают службы __Nats__ и __Stan__. 
+Здесь мы на серверах __ЦС__ и __ЦР__ в файле настроек __appsettings.json__ службы __Pkica__: 
+  - :white_check_mark: установили адреса подключения к базам данных:
+    - :white_check_mark: Центра сертификации - __cpcadb__, 
+    - :white_check_mark: Реестра сертификатов - __CertRegistry__, 
+    - :white_check_mark: Центра регистрации - __cpradb__;
+  - :white_check_mark: отключили опцию шифрования при подключении к службе очередей __Nats__, 
+  - :white_check_mark: задали адреса для служб: 
+    - :white_check_mark: __Nats__,
+    - :white_check_mark: __Stan__. 
 
 Плейбук [play/08.2.cproca-config-distros-set-parameters-ca.yml](vagrant/ansible.ca/play/08.2.cproca-config-distros-set-parameters-ca.yml):
 <details> 
