@@ -593,13 +593,13 @@ retry_files_enabled = False
 
 Здесь мы на серверах __ЦС__ и __ЦР__ в файле настроек __appsettings.json__ службы __Pkica__: 
   - :white_check_mark: установили адреса подключения к базам данных:
-    - :heavy_check_mark: Центра сертификации - __cpcadb__, 
-    - :heavy_check_mark: Реестра сертификатов - __CertRegistry__, 
-    - :heavy_check_mark: Центра регистрации - __cpradb__;
+   - :heavy_check_mark: Центра сертификации - __cpcadb__, 
+   - :heavy_check_mark: Реестра сертификатов - __CertRegistry__, 
+   - :heavy_check_mark: Центра регистрации - __cpradb__;
   - :white_check_mark: отключили опцию шифрования при подключении к службе очередей __Nats__, 
   - :white_check_mark: задали адреса для служб: 
-    - :white_check_mark: __Nats__,
-    - :white_check_mark: __Stan__. 
+   - :heavy_check_mark: __Nats__,
+   - :heavy_check_mark: __Stan__. 
 
 При этом, все изменения производились с помощью модуля __shell__ и текстового процессора __sed__ - т.е. использовался т.н. _bashsible_. 
 
