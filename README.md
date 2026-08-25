@@ -572,7 +572,6 @@ retry_files_enabled = False
 
 ```
 ---
----
 - name: <<< PLAYBOOK 08.1 >>> CPROCA AND CPRORA | Config pkica appsettings.json.
   hosts: caservers
   become: true
@@ -602,6 +601,44 @@ retry_files_enabled = False
     - :heavy_check_mark: __Stan__. 
 
 При этом, все изменения производились с помощью модуля __shell__ и текстового процессора __sed__ - т.е. использовался т.н. _bashsible_. 
+
+Следующий плейбук [play/09.1.cproca-config-distros-set-parameters-pkica.yml](vagrant/ansible.ca/play/09.1.cproca-config-distros-set-parameters-pkica.yml) выполняет те же действия, но с использованием модуля __lineinfile__:
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 09.1 >>> CPROCA AND CPRORA | Config "ConnectionString" parameter for Pkica appsettings.json.
+  hosts: caservers
+  become: true
+  tasks:
+    - name: CryptoPro CA. Edit pkica appsettings.json.
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.ss }}"
+        firstmatch: false
+        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
+      loop:
+        - { backup: true,  path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=CertRegistry", server: "{{ pg_address }}", database:  "{{ certreg_db }}", username: "{{ cpca_dbadmin }}" }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ra", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
+
+    - name: CryptoPro CA. Edit pkica appsettings.json.
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.search }}"
+        firstmatch: "{{ item.fm }}"
+        line: '{{ item.line }}'
+      loop:
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Url", fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Url", fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+
+```
+</details>
 
 Плейбук [play/08.2.cproca-config-distros-set-parameters-ca.yml](vagrant/ansible.ca/play/08.2.cproca-config-distros-set-parameters-ca.yml):
 <details> 
