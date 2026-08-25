@@ -1,9 +1,9 @@
 ---
-- name: <<< PLAYBOOK 09.1 >>> CPROCA AND CPRORA | Config "ConnectionString" parameter for Pkica and Ca appsettings.json.
-  hosts: cprocaserver
+- name: <<< PLAYBOOK 09.1 >>> CPROCA AND CPRORA | Config "ConnectionString" parameter for Pkica appsettings.json.
+  hosts: caservers
   become: true
   tasks:
-    - name: CryptoPro CA. Edit pkica, ca appsettings.json.
+    - name: CryptoPro CA. Edit pkica appsettings.json.
       ansible.builtin.lineinfile:
         backup: "{{ item.backup }}"
         path: "{{ item.path }}"
@@ -14,9 +14,8 @@
         - { backup: true,  path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
         - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=CertRegistry", server: "{{ pg_address }}", database:  "{{ certreg_db }}", username: "{{ cpca_dbadmin }}" }
         - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ra", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
-        - { backup: true, path: "{{ casrvbase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
 
-    - name: CryptoPro CA. Edit pkica, ca appsettings.json.
+    - name: CryptoPro CA. Edit pkica appsettings.json.
       ansible.builtin.lineinfile:
         backup: "{{ item.backup }}"
         path: "{{ item.path }}"
