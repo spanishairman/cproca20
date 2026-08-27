@@ -1,0 +1,30 @@
+---
+- name: <<< PLAYBOOK 09.2 >>> CPROCA | Config "ConnectionString" parameter for CA appsettings.json.
+  hosts: cprocaserver
+  become: true
+  tasks:
+    - name: CryptoPro CA. Edit CA appsettings.json.
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.ss }}"
+        firstmatch: false
+        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
+      loop:
+        - { backup: true, path: "{{ casrvbase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
+
+    - name: CryptoPro CA. Edit CA appsettings.json. Config "Secure, Url, SN, Company" parameters
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.search }}"
+        firstmatch: "{{ item.fm }}"
+        line: '{{ item.line }}'
+      loop:
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Url", fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Url", fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "SerialNumber", fm: false, line: '    "SerialNumber": "{{ licca }}",' }
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Company", fm: false, line: '    "Company": "{{ company }}"' }
+
