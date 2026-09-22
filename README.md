@@ -562,9 +562,9 @@ retry_files_enabled = False
 
 С помощью следующих плейбуков каждый файл в этих каталогах приводится в актуальное для работы состояние:
  - play/08.1.cproca-config-distros-set-parameters-pkica.yml - задаёт параметры подключения к базам данных и опции шифрования для утилиты __pkica__;
- - play/08.2.cproca-config-distros-set-parameters-ca.yml;
- - play/08.3.cproca-config-distros-set-parameters-ra.yml;
- - play/08.4.cproca-config-distros-set-parameters-raweb.yml.
+ - play/08.2.cproca-config-distros-set-parameters-ca.yml - задаёт параметры подключения к базе данных Центра сертификации, опции шифрования при подключении к __Nats__, адреса __Nats__ и __Stan__, параметры лицензии, а так-же параметры в файлах конфигурации службы __Nats__;
+ - play/08.3.cproca-config-distros-set-parameters-ra.yml - то же самое, но для Центра регистрации;
+ - play/08.4.cproca-config-distros-set-parameters-raweb.yml - то же самое, но для Веб службы Центра регистрации.
 
 Плейбук [play/08.1.cproca-config-distros-set-parameters-pkica.yml](vagrant/ansible.ca/play/08.1.cproca-config-distros-set-parameters-pkica.yml):
 <details>
