@@ -1,0 +1,30 @@
+---
+- name: <<< PLAYBOOK 09.3 >>> CPRORA | Set parameters for RAWEB appsettings.json.
+  hosts: cproraserver
+  become: true
+  tasks:
+    - name: CryptoPro RA. Edit RAWEB appsettings.json. Config "ConnectionString" parameter.
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.ss }}"
+        firstmatch: false
+        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
+      loop:
+        - { backup: true, path: "{{ rawebbase }}/appsettings.json", ss: "Database=Ra", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
+
+    - name: CryptoPro RA. Edit RAWEB appsettings.json. Config "Secure, Url, SN, Company" parameters
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.search }}"
+        firstmatch: "{{ item.fm }}"
+        line: '{{ item.line }}'
+      loop:
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "localhost:5000", fm: false, line: '  "Urls": "http://{{ inventory_hostname }}:5000",' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: '"Url":', fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: '"Url":', fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "SerialNumber", fm: false, line: '    "SerialNumber": "{{ licra }}",' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "Company", fm: false, line: '    "Company": "{{ company }}"' }
