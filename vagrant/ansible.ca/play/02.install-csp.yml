@@ -18,7 +18,7 @@
   tasks:
     - name: INSTALL CSP. Install Software CryptoPro CSP, cprocsp-nginx, lsb-cprocsp-devel, cprocsp-stunnel, cprocsp-pki-cades.
       ansible.builtin.shell: |
-        ./install.sh kc1 kc2 cprocsp-nginx lsb-cprocsp-devel cprocsp-stunnel cprocsp-pki-cades
+        ./install.sh kc1 lsb-cprocsp-devel cprocsp-pki-cades
       args:
         executable: /bin/bash
         chdir: "{{ dst_dirinst }}/{{ dircsp }}/"

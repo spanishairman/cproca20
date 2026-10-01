@@ -184,7 +184,7 @@ retry_files_enabled = False
 </details>
 
 ##### Установка
-Далее потребуется распаковать ранее загруженный дистрибутив КриптоПро CSP, запустить вложенный скрипт __install.sh__ с необходимым набором параметров (уровни кс{1,2,3} и набор компонентов), ввести лицензии, добавить гамму и перезапустить службу cprocsp. Все эти шаги выполняет плейбук [02.install-csp.yml](vagrant/ansible.ca/play/02.install-csp.yml)
+Далее потребуется распаковать ранее загруженный дистрибутив КриптоПро CSP, запустить вложенный скрипт __install.sh__ с необходимым набором параметров (уровни кс{1,2} и набор компонентов), ввести лицензии, добавить гамму и перезапустить службу cprocsp. Все эти шаги выполняет плейбук [02.install-csp.yml](vagrant/ansible.ca/play/02.install-csp.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -209,7 +209,7 @@ retry_files_enabled = False
   tasks:
     - name: INSTALL CSP. Install Software CryptoPro CSP, cprocsp-nginx, lsb-cprocsp-devel, cprocsp-stunnel, cprocsp-pki-cades.
       ansible.builtin.shell: |
-        ./install.sh kc1 kc2 cprocsp-nginx lsb-cprocsp-devel cprocsp-stunnel cprocsp-pki-cades
+        ./install.sh kc1 lsb-cprocsp-devel cprocsp-pki-cades
       args:
         executable: /bin/bash
         chdir: "{{ dst_dirinst }}/{{ dircsp }}/"
@@ -288,6 +288,17 @@ retry_files_enabled = False
 
 </details>
 
+В данном плейбуке мы для серверов __cproca__ и __cprora__ (группа хостов __caservers__ в файле __staging/hosts__) установили пакеты:
+  - :white_check_mark: acl
+  - :white_check_mark: postgresql-client
+  - :white_check_mark: python3-cryptography
+
+Для сервера __cprodbserver__ же, были установлены:
+  - :white_check_mark: acl
+  - :white_check_mark: postgresql
+  - :white_check_mark: python3-psycopg2
+
+
 #### Настройка PostgreSQL Server. Предоставление доступа для внешних подключений
 Откроем доступ для подключения к базам данных с удалённых хостов cproca-test и cprora-test. Плейбук [04.postgres-configure.yml](vagrant/ansible.ca/play/04.postgres-configure.yml)
 <details>
@@ -309,8 +320,8 @@ retry_files_enabled = False
       method: md5
       create: true
     loop:
-      - { source: "{{ hostvars['cproca-test'].ansible_host }}", users: "{{ cpca_dbadmin }}" }
-      - { source: "{{ hostvars['cprora-test'].ansible_host }}", users: "{{ cpra_dbadmin }}" }
+      - { source: "{{ hostvars['cproca'].ansible_host }}", users: "{{ cpca_dbadmin }}" }
+      - { source: "{{ hostvars['cprora'].ansible_host }}", users: "{{ cpra_dbadmin }}" }
 
   - name: CONFIGURE POSTGRESQL. Configure Server. Restart service PostgreSQL.
     ansible.builtin.service:
@@ -319,6 +330,10 @@ retry_files_enabled = False
 ```
 
 </details>
+
+Данный плейбук выполняет редактирование файла __pg_hba__, а именно открывает следующие доступы ко всем базам данных:
+  - :white_check_mark: с хоста __cproca__ для пользователя __cpca\_dbadmin__
+  - :white_check_mark: с хоста __cprora__ для пользователя __cpra\_dbadmin__
 
 #### Настройка PostgreSQL Server. Создание комплекта служебных баз данных и ролей, настройка привилегий
 Создание баз данных и ролей, а так-же, предоставление привилегий для этих ролей на созданных базах. Плейбук [05.postgres-create-dbs-roles.yml](vagrant/ansible.ca/play/05.postgres-create-dbs-roles.yml)
