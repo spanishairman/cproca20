@@ -47,6 +47,8 @@ rawebsbin: CryptoPro.Ra.Web
 pkicabin: pkica
 natsbase: /opt/cpca/nats-streaming
 natssbin: nats-streaming-server
+nginxbase: /opt/cpca/nginx/
+nginxdistro: nginx-gost-1.18.0_amd64.deb
 ca_address: 192.168.1.1
 ca_hostname: cproca
 ra_address: 192.168.1.2

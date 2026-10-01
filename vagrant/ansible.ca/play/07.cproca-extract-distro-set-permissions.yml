@@ -43,7 +43,7 @@
         - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ admin_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
         - { path: "{{ natsbase }}/{{ natssbin }}", entity: "{{ cpca_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
 
-- name: <<< PLAYBOOK 07 >>> CPRORA | Set permissions and ACL privileges for CryptoPro.Ra.Service and Pkica util
+- name: <<< PLAYBOOK 07 >>> CPRORA | Set permissions and ACL privileges for CryptoPro.Ra.Service and Pkica util. Install Nginx
   hosts: cproraserver
   become: true
   tasks:
@@ -67,3 +67,6 @@
         - { path: "{{ rawebbase }}/{{ rawebsbin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
         - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
         - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ admin_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+    - name: CryptoPro RA. Install Nginx
+      ansible.builtin.apt:
+        deb: "{{ nginxbase }}/{{ nginxdistro }}"

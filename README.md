@@ -564,7 +564,9 @@ retry_files_enabled = False
         - { path: "{{ rawebbase }}/{{ rawebsbin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
         - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
         - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ admin_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
-
+    - name: CryptoPro RA. Install Nginx
+      ansible.builtin.apt:
+        deb: "{{ nginxbase }}/{{ nginxdistro }}"
 ```
 </details>
 
@@ -574,6 +576,8 @@ retry_files_enabled = False
 - /opt/cpca/pkica/appsettings.json - файл конфигурации pkica - программы настройки УЦ;
 - /opt/cpca/CryptoPro.Ca.Service/appsettings.json - файл конфигурации CryptoPro.Ca.Service - сервиса ЦС
 - /opt/cpca/CryptoPro.Ra.Service/appsettings.json - файл конфигурации CryptoPro.Ra.Service - сервиса ЦР.
+
+##### Способ 1. Использование для редактирования конфигурационных файлов  ansible-модуля shell и текстового процессора sed
 
 С помощью следующих плейбуков каждый файл в этих каталогах приводится в актуальное для работы состояние:
  - play/08.1.cproca-config-distros-set-parameters-pkica.yml - задаёт параметры подключения к базам данных и опции шифрования для утилиты __pkica__;
@@ -615,45 +619,6 @@ retry_files_enabled = False
     - :heavy_check_mark: __Nats__,
     - :heavy_check_mark: __Stan__. 
 
-При этом, все изменения производились с помощью модуля __shell__ и текстового процессора __sed__ - т.е. использовался т.н. _bashsible_. 
-
-Следующий плейбук [play/09.1.cproca-config-distros-set-parameters-pkica.yml](vagrant/ansible.ca/play/09.1.cproca-config-distros-set-parameters-pkica.yml) выполняет те же действия, но с использованием модуля __lineinfile__:
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 09.1 >>> CPROCA AND CPRORA | Config "ConnectionString" parameter for Pkica appsettings.json.
-  hosts: caservers
-  become: true
-  tasks:
-    - name: CryptoPro CA. Edit pkica appsettings.json.
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.ss }}"
-        firstmatch: false
-        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
-      loop:
-        - { backup: true,  path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=CertRegistry", server: "{{ pg_address }}", database:  "{{ certreg_db }}", username: "{{ cpca_dbadmin }}" }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ra", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
-
-    - name: CryptoPro CA. Edit pkica appsettings.json.
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.search }}"
-        firstmatch: "{{ item.fm }}"
-        line: '{{ item.line }}'
-      loop:
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Url", fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Url", fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
-
-```
-</details>
 
 Плейбук [play/08.2.cproca-config-distros-set-parameters-ca.yml](vagrant/ansible.ca/play/08.2.cproca-config-distros-set-parameters-ca.yml):
 <details> 
@@ -754,3 +719,47 @@ retry_files_enabled = False
 </details>
 
 Здесь задаются настройки веб-служб __Центра регистрации__.
+
+##### Способ 2. Использование ansible-модуля lineinfile
+
+В предыдущем параграфе все изменения производились с помощью модуля __shell__ и текстового процессора __sed__ - т.е. использовался т.н. _bashsible_. 
+
+Здесь же, для получения того же результатта, к которому приводит работа плейбуков 8.n, мы будем пользоваться модулем __lineinfile__. 
+Следующий плейбук [play/09.1.cproca-config-distros-set-parameters-pkica.yml](vagrant/ansible.ca/play/09.1.cproca-config-distros-set-parameters-pkica.yml) выполняет установку нужных параметров в файле __appsettings.json__ утилиты __pkica__:
+
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 09.1 >>> CPROCA AND CPRORA | Config "ConnectionString" parameter for Pkica appsettings.json.
+  hosts: caservers
+  become: true
+  tasks:
+    - name: CryptoPro CA. Edit pkica appsettings.json.
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.ss }}"
+        firstmatch: false
+        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
+      loop:
+        - { backup: true,  path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=CertRegistry", server: "{{ pg_address }}", database:  "{{ certreg_db }}", username: "{{ cpca_dbadmin }}" }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ra", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
+
+    - name: CryptoPro CA. Edit pkica appsettings.json.
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.search }}"
+        firstmatch: "{{ item.fm }}"
+        line: '{{ item.line }}'
+      loop:
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Url", fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Url", fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+
+```
+</details>
