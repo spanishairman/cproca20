@@ -653,8 +653,15 @@ retry_files_enabled = False
 ```
 </details>
 
-Здесь мы для службы __CryptoPro CA__ отредактировали строку подключения к базе данных Центра сертификации, отключили шифрование для подключения к службе __Nats__, ввели серийный номер и название компании.
-Так же, изменили адрес, на котором работает служба __nats-streaming-server__.
+Здесь мы для служб: 
+  - :white_check_mark: __CryptoPro CA__ на сервере центра сертификации:
+    - :heavy_check_mark: отредактировали строку подключения к базе данных Центра сертификации; 
+    - :heavy_check_mark: отключили шифрование для подключения к службе __Nats__;
+    - :heavy_check_mark: указали в качестве адреса для подключения к службе __Nats__ собственное имя хоста вместо __localhost__;
+    - :heavy_check_mark: указали в качестве адреса для подключения к службе __Stan__ собственное имя хоста вместо __localhost__;
+    - :heavy_check_mark: ввели серийный номер и название компании;
+  - :white_check_mark: __nats-streaming-server__:
+    - :heavy_check_mark: изменили адрес, на котором работает служба.
 
 Плейбук [play/08.3.cproca-config-distros-set-parameters-ra.yml](vagrant/ansible.ca/play/08.3.cproca-config-distros-set-parameters-ra.yml):
 <details> 
@@ -683,7 +690,15 @@ retry_files_enabled = False
 ```
 </details>
 
-Здесь выполняются те же действия, что и в предыдущем плейбуке, но для службы __CryptoPro.Ra.Service__, дополнительно задаются настройки для публикации списков отзыва и сертификата УЦ.
+Здесь для службы __CryptoPro.Ra.Service__ на сервере центра регистрации: 
+  - :white_check_mark: отредактировали строку подключения к базе данных Центра регистрации;
+  - :white_check_mark: отключили шифрование для подключения к службе __Nats__;
+  - :white_check_mark: указали в качестве адреса для подключения к службе __Nats__ имя хоста центра сертификации вместо __localhost__;
+  - :white_check_mark: указали в качестве адреса для подключения к службе __Stan__ имя хоста центра сертификации вместо __localhost__;
+  - :white_check_mark: включили публикацию списков отзыва;
+  - :white_check_mark: включили публикацию сертификтов ЦС;
+  - :white_check_mark: ввели серийный номер и название компании.
+
 
 Плейбук [play/08.4.cproca-config-distros-set-parameters-raweb.yml](vagrant/ansible.ca/play/08.4.cproca-config-distros-set-parameters-raweb.yml):
 <details>
