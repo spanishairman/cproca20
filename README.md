@@ -363,9 +363,10 @@ retry_files_enabled = False
         owner: "{{ item.owner }}"
       loop:
         - { name: "{{ cpca_db }}", owner: "{{ cpca_dbadmin }}" }
+        - { name: "{{ certreg_db }}", owner: "{{ cpca_dbadmin }}" }
         - { name: "{{ cpra_db }}", owner: "{{ cpra_dbadmin }}" }
 
-    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}" and "{{ cpra_db }}", grant privileges on databases objects (database) for roles.
+    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}", "{{ certreg_db }}" and "{{ cpra_db }}", grant privileges on databases objects (database) for roles.
       community.postgresql.postgresql_privs:
         database: "{{ item.database }}"
         privs: "{{ item.privs }}"
@@ -375,9 +376,10 @@ retry_files_enabled = False
         state: present
       loop:
         - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
+        - { database: "{{ certreg_db }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
         - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
 
-    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}" and "{{ cpra_db }}", grant privileges on databases objects (schema) for roles.
+    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}", "{{ certreg_db }}" and "{{ cpra_db }}", grant privileges on databases objects (schema) for roles.
       community.postgresql.postgresql_privs:
         database: "{{ item.database }}"
         privs: "{{ item.privs }}"
@@ -387,6 +389,7 @@ retry_files_enabled = False
         state: present
       loop:
         - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
+        - { database: "{{ certreg_db }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
         - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
 ```
 </details>
@@ -397,12 +400,15 @@ retry_files_enabled = False
     - :heavy_check_mark: __cpra_dbadmin__ - администратор базы данных Центра регистрации;
   - :white_check_mark: создали базы данных:
     - :heavy_check_mark: __cpca_db__ - база данных Центра сертификации, владелец - __cpca_dbadmin__;
+    - :heavy_check_mark: __certreg_db__ - база данных Реестра сертификатов, владелец - __cpca_dbadmin__;
     - :heavy_check_mark: __cpra_db__ - база данных Центра регистрации, владелец - __cpra_dbadmin__;
   - :white_check_mark: предоставили привилегии __ALL__ на базы данных:
     - :heavy_check_mark: __cpca_db__ - для роли __cpca_dbadmin__;
+    - :heavy_check_mark: __certreg_db__ - для роли __cpca_dbadmin__;
     - :heavy_check_mark: __cpra_db__ - для роли __cpra_dbadmin__;
   - :white_check_mark: предоставили привилегии __CREATE__ на тип __schema__ объекта __public__ баз данных:
     - :heavy_check_mark: __cpca_db__ - для роли __cpca_dbadmin__;
+    - :heavy_check_mark: __certreg_db__ - для роли __cpca_dbadmin__;
     - :heavy_check_mark: __cpra_db__ - для роли __cpra_dbadmin__;
 
 #### Центр сертификации и Центр регистрации. Создание группы безопасности и служебных пользователей. Настройка файлов аутентификации на сервере баз данных
