@@ -391,6 +391,20 @@ retry_files_enabled = False
 ```
 </details>
 
+Здесь мы на сервере баз данных:
+  - :white_check_mark: создали роли:
+    - :heavy_check_mark: __cpca_dbadmin__ - администратор базы данных Центра сертификации;
+    - :heavy_check_mark: __cpra_dbadmin__ - администратор базы данных Центра регистрации;
+  - :white_check_mark: создали базы данных:
+    - :heavy_check_mark: __cpca_db__ - база данных Центра сертификации, владелец - __cpca_dbadmin__;
+    - :heavy_check_mark: __cpra_db__ - база данных Центра регистрации, владелец - __cpra_dbadmin__;
+  - :white_check_mark: предоставили привилегии __ALL__ на базы данных:
+    - :heavy_check_mark: __cpca_db__ - для роли __cpca_dbadmin__;
+    - :heavy_check_mark: __cpra_db__ - для роли __cpra_dbadmin__;
+  - :white_check_mark: предоставили привилегии __CREATE__ на тип __schema__ объекта __public__ баз данных:
+    - :heavy_check_mark: __cpca_db__ - для роли __cpca_dbadmin__;
+    - :heavy_check_mark: __cpra_db__ - для роли __cpra_dbadmin__;
+
 #### Центр сертификации и Центр регистрации. Создание группы безопасности и служебных пользователей. Настройка файлов аутентификации на сервере баз данных
 Для установки CRL в хранилище __LocalMachine\CA__ на серверах Центра Сертификации и Центра Регистрации создается группа __crl-writers__. В эту группу добавляется служебный пользователь, с правами которого работают службы ЦС и ЦР.
 Так же, для служебных учетных записей настраивается подключение к базам данных. Плейбук [06.cproca-create-groups-users.yml](vagrant/ansible.ca/play/06.cproca-create-groups-users.yml):
