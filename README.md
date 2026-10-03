@@ -259,7 +259,7 @@ retry_files_enabled = False
   - :white_check_mark: restart
 
 #### Установка PostgreSQL Server
-Клиентская и серверная часть сервера баз данных устанавливается из репозиториев Debian. Для этого используем плейбук [03.install-postgres.yml](vagrant/ansible.ca/play/03.install-postgres.yml)
+Клиентская и серверная часть Postgresql устанавливается из репозиториев Debian. Для этого используем плейбук [03.install-postgres.yml](vagrant/ansible.ca/play/03.install-postgres.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -593,17 +593,17 @@ retry_files_enabled = False
 #### Установка параметров для служб Центра сертификации и Центра регистрации
 Для утилиты настройки Удостоверяющего Центра - __Pkica__, сервиса **Центра Сертификации** и сервиса **Центра Регистрации** основные настройки находятся в файлах __appsettings.json__, располагающихся в соответствующих каталогах:
 
-- /opt/cpca/pkica/appsettings.json - файл конфигурации pkica - программы настройки УЦ;
-- /opt/cpca/CryptoPro.Ca.Service/appsettings.json - файл конфигурации CryptoPro.Ca.Service - сервиса ЦС
-- /opt/cpca/CryptoPro.Ra.Service/appsettings.json - файл конфигурации CryptoPro.Ra.Service - сервиса ЦР.
+- /opt/cpca/pkica/appsettings.json - файл конфигурации __pkica__ - программы настройки УЦ;
+- /opt/cpca/CryptoPro.Ca.Service/appsettings.json - файл конфигурации __CryptoPro.Ca.Service__ - сервиса ЦС
+- /opt/cpca/CryptoPro.Ra.Service/appsettings.json - файл конфигурации __CryptoPro.Ra.Service__ - сервиса ЦР.
 
 ##### Способ 1. Использование для редактирования конфигурационных файлов  ansible-модуля shell и текстового процессора sed
 
 С помощью следующих плейбуков каждый файл в этих каталогах приводится в актуальное для работы состояние:
- - play/08.1.cproca-config-distros-set-parameters-pkica.yml - задаёт параметры подключения к базам данных и опции шифрования для утилиты __pkica__;
- - play/08.2.cproca-config-distros-set-parameters-ca.yml - задаёт параметры подключения к базе данных Центра сертификации, опции шифрования при подключении к __Nats__, адреса __Nats__ и __Stan__, параметры лицензии, а так-же параметры в файлах конфигурации службы __Nats__;
- - play/08.3.cproca-config-distros-set-parameters-ra.yml - то же самое, но для Центра регистрации;
- - play/08.4.cproca-config-distros-set-parameters-raweb.yml - то же самое, но для Веб службы Центра регистрации.
+ - _play/08.1.cproca-config-distros-set-parameters-pkica.yml_ - задаёт параметры подключения к базам данных и опции шифрования для утилиты __pkica__;
+ - _play/08.2.cproca-config-distros-set-parameters-ca.yml_ - задаёт параметры подключения к базе данных Центра сертификации, опции шифрования при подключении к __Nats__, адреса __Nats__ и __Stan__, параметры лицензии, а так-же параметры в файлах конфигурации службы __Nats__;
+ - _play/08.3.cproca-config-distros-set-parameters-ra.yml_ - то же самое, но для Центра регистрации;
+ - _play/08.4.cproca-config-distros-set-parameters-raweb.yml_ - то же самое, но для Веб службы Центра регистрации.
 
 Плейбук [play/08.1.cproca-config-distros-set-parameters-pkica.yml](vagrant/ansible.ca/play/08.1.cproca-config-distros-set-parameters-pkica.yml):
 <details>
