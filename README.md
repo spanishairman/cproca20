@@ -818,3 +818,62 @@ retry_files_enabled = False
   - :white_check_mark: задали адрес для службы __Nats__,
   - :white_check_mark: отключили опцию шифрования при подключении к службе очередей __Stan__,
   - :white_check_mark: задали адрес для службы __Stan__,
+
+Следующий плейбук [play/09.2.cproca-config-distros-set-parameters-ca.yml](vagrant/ansible.ca/play/09.2.cproca-config-distros-set-parameters-ca.yml) выполняет установку нужных параметров в файле __appsettings.json__ Центра сертификации:
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 09.2 >>> CPROCA | Set parameters for CA appsettings.json.
+  hosts: cprocaserver
+  become: true
+  tasks:
+    - name: CryptoPro CA. Edit CA appsettings.json. Config "ConnectionString" parameter.
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.ss }}"
+        firstmatch: false
+        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
+      loop:
+        - { backup: true, path: "{{ casrvbase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
+
+    - name: CryptoPro CA. Edit CA appsettings.json. Config "Secure, Url, SN, Company" parameters
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.search }}"
+        firstmatch: "{{ item.fm }}"
+        line: '{{ item.line }}'
+      loop:
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Url", fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Url", fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "SerialNumber", fm: false, line: '    "SerialNumber": "{{ licca }}",' }
+        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Company", fm: false, line: '    "Company": "{{ company }}"' }
+
+    - name: CryptoPro CA. Edit nats-streaming-server daemon config (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS). Config "Listen" parameter
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.search }}"
+        firstmatch: "{{ item.fm }}"
+        line: '{{ item.line }}'
+      loop:
+        - { backup: true, path: "{{ natsbase }}/nats.conf", search: "listen:", fm: true, line: 'listen:         {{ inventory_hostname }}:4222' }
+        - { backup: true, path: "{{ natsbase }}/nats.no-tls.conf", search: "listen", fm: true, line: 'listen:         {{ inventory_hostname }}:4222' }
+```
+</details>
+
+Здесь мы для служб:
+  - :white_check_mark: __CryptoPro CA__ на сервере Центра сертификации:
+    - :heavy_check_mark: отредактировали строку подключения к базе данных Центра сертификации;
+    - :heavy_check_mark: отключили шифрование для подключения к службе __Nats__;
+    - :heavy_check_mark: указали в качестве адреса для подключения к службе __Nats__ собственное имя хоста вместо __localhost__;
+    - :heavy_check_mark: отключили шифрование для подключения к службе __Stan__;
+    - :heavy_check_mark: указали в качестве адреса для подключения к службе __Stan__ собственное имя хоста вместо __localhost__;
+    - :heavy_check_mark: ввели серийный номер и название компании;
+  - :white_check_mark: __nats-streaming-server__ - Служба очередей NATS Streaming с поддержкой ГОСТ TLS:
+    - :heavy_check_mark: изменили адрес, на котором работает эта служба.

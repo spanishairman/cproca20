@@ -1,9 +1,9 @@
 ---
-- name: <<< PLAYBOOK 09.2 >>> CPROCA | Config "ConnectionString" parameter for CA appsettings.json.
+- name: <<< PLAYBOOK 09.2 >>> CPROCA | Set parameters for CA appsettings.json.
   hosts: cprocaserver
   become: true
   tasks:
-    - name: CryptoPro CA. Edit CA appsettings.json.
+    - name: CryptoPro CA. Edit CA appsettings.json. Config "ConnectionString" parameter.
       ansible.builtin.lineinfile:
         backup: "{{ item.backup }}"
         path: "{{ item.path }}"
@@ -28,3 +28,13 @@
         - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "SerialNumber", fm: false, line: '    "SerialNumber": "{{ licca }}",' }
         - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Company", fm: false, line: '    "Company": "{{ company }}"' }
 
+    - name: CryptoPro CA. Edit nats-streaming-server daemon config (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS). Config "Listen" parameter
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.search }}"
+        firstmatch: "{{ item.fm }}"
+        line: '{{ item.line }}'
+      loop:
+        - { backup: true, path: "{{ natsbase }}/nats.conf", search: "listen:", fm: true, line: 'listen:         {{ inventory_hostname }}:4222' }
+        - { backup: true, path: "{{ natsbase }}/nats.no-tls.conf", search: "listen", fm: true, line: 'listen:         {{ inventory_hostname }}:4222' }
