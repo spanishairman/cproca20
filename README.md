@@ -819,7 +819,7 @@ retry_files_enabled = False
   - :white_check_mark: отключили опцию шифрования при подключении к службе очередей __Stan__,
   - :white_check_mark: задали адрес для службы __Stan__,
 
-Следующий плейбук [play/09.2.cproca-config-distros-set-parameters-ca.yml](vagrant/ansible.ca/play/09.2.cproca-config-distros-set-parameters-ca.yml) выполняет установку нужных параметров в файле __appsettings.json__ Центра сертификации:
+Следующий плейбук [play/09.2.cproca-config-distros-set-parameters-ca.yml](vagrant/ansible.ca/play/09.2.cproca-config-distros-set-parameters-ca.yml) выполняет установку нужных параметров в файле __appsettings.json__ Центра сертификации и файлах __nats.conf__, __nats.no-tls.conf__ Службы очередей _NATS Streaming_:
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
