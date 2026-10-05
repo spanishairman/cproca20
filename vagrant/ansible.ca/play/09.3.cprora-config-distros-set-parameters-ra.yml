@@ -26,8 +26,8 @@
         - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
         - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "Url", fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
         - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "PublishCrls", fm: false, line: '    "PublishCrls": true,' }
+        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: '"NodeId":', fm: true, line: '    "NodeId": "{{ inventory_hostname }}"' }
         - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "PublishCaCerts", fm: false, line: '    "PublishCaCerts": true,' }
         - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: '"NodeId":', fm: false, line: '    "NodeId": "{{ inventory_hostname }}"' }
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: '"NodeId":', fm: true, line: '    "NodeId": "{{ inventory_hostname }}"' }
         - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "SerialNumber", fm: false, line: '    "SerialNumber": "{{ licra }}",' }
         - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "Company", fm: false, line: '    "Company": "{{ company }}"' }
