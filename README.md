@@ -931,3 +931,51 @@ retry_files_enabled = False
   - :white_check_mark: включили публикацию сертификтов ЦС;
   - :white_check_mark: указали уникальный NodeID для публикации сертификатов ЦС (требуется для работы в кластере);
   - :white_check_mark: ввели серийный номер и название компании.
+
+Плейбук [play/09.4.cprora-config-distros-set-parameters-raweb.yml](vagrant/ansible.ca/play/09.4.cprora-config-distros-set-parameters-raweb.yml) выполняет установку нужных параметров в файле __appsettings.json__ Веб-службы Центра регистрации:
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 09.4 >>> CPRORA | Set parameters for RAWEB appsettings.json.
+  hosts: cproraserver
+  become: true
+  tasks:
+    - name: CryptoPro RA. Edit RAWEB appsettings.json. Config "ConnectionString" parameter.
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.ss }}"
+        firstmatch: false  
+        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
+      loop:
+        - { backup: true, path: "{{ rawebbase }}/appsettings.json", ss: "Database=Ra", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
+
+    - name: CryptoPro RA. Edit RAWEB appsettings.json. Config "Secure, Url, SN, Company" parameters
+      ansible.builtin.lineinfile:
+        backup: "{{ item.backup }}"
+        path: "{{ item.path }}"
+        search_string: "{{ item.search }}"
+        firstmatch: "{{ item.fm }}"
+        line: '{{ item.line }}'
+      loop:
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "localhost:5000", fm: false, line: '  "Urls": "http://{{ inventory_hostname }}:5000",' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: '"Url":', fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: '"Url":', fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "SerialNumber", fm: false, line: '    "SerialNumber": "{{ licra }}",' }
+        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "Company", fm: false, line: '    "Company": "{{ company }}"' }
+
+```
+</details>
+
+Здесь для службы __CryptoPro.Ra.Web.Service__ на сервере Центра регистрации:
+  - :white_check_mark: отредактировали строку подключения к базе данных Центра регистрации;
+  - :white_check_mark: изменили адрес для подключения к службе с _localhost_ на собственное имя хоста;
+  - :white_check_mark: отключили шифрование для подключения к службе __Nats__;
+  - :white_check_mark: указали в качестве адреса для подключения к службе __Nats__ имя хоста центра сертификации вместо __localhost__;
+  - :white_check_mark: отключили шифрование для подключения к службе __Stan__;
+  - :white_check_mark: указали в качестве адреса для подключения к службе __Stan__ имя хоста центра сертификации вместо __localhost__;
+  - :white_check_mark: ввели серийный номер и название компании.

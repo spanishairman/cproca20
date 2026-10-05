@@ -1,5 +1,5 @@
 ---
-- name: <<< PLAYBOOK 09.3 >>> CPRORA | Set parameters for RAWEB appsettings.json.
+- name: <<< PLAYBOOK 09.4 >>> CPRORA | Set parameters for RAWEB appsettings.json.
   hosts: cproraserver
   become: true
   tasks:
