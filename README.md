@@ -1031,13 +1031,13 @@ retry_files_enabled = False
 
 Здесь на Центре сертификации создаются:
 
-  :white_check_mark: /var/lib/nats-streaming/pkica-store - каталог хранения сообщений;
-  :white_check_mark: /opt/cpca/nats-streaming/ssl - каталог хранения серверных и клиентских сертификатов и ключей Nats;
+  :white_check_mark: /var/lib/nats-streaming/pkica-store - каталог хранения сообщений; \
+  :white_check_mark: /opt/cpca/nats-streaming/ssl - каталог хранения серверных и клиентских сертификатов и ключей Nats; \
   :white_check_mark: /var/log/cpca - каталог для хранения журналов Центра Сертификации.
 
 На Центре регистрации:
-  :white_check_mark: /var/lib/cpca/cdp - каталог хранения списков отзыва;
-  :white_check_mark: /var/lib/cpca/aia - хранилище сертификатов УЦ;
-  :white_check_mark: /var/log/cpca - каталог для хранения журналов Центра Регистрации
+  :white_check_mark: /var/lib/cpca/cdp - каталог хранения списков отзыва; \
+  :white_check_mark: /var/lib/cpca/aia - хранилище сертификатов УЦ; \
+  :white_check_mark: /var/log/cpca - каталог для хранения журналов Центра Регистрации.
 
 Для всех созданных каталогов задаются владелец и разрешения. 
