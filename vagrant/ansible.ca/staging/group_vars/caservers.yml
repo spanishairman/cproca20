@@ -36,6 +36,7 @@ cpca_srv_acc: cpca-srv
 cpra_srv_acc: cpra-srv
 cabase: /opt/cpca
 cadistro: ca-linux-x64-1.63.0.32.zip
+calog: /var/log/cpca
 casrvbase: /opt/cpca/CryptoPro.Ca.Service
 rasrvbase: /opt/cpca/CryptoPro.Ra.Service
 rawebbase: /opt/cpca/CryptoPro.Ra.Web
@@ -46,6 +47,7 @@ rasrvsbin: CryptoPro.Ra.Service
 rawebsbin: CryptoPro.Ra.Web
 pkicabin: pkica
 natsbase: /opt/cpca/nats-streaming
+natslib: /var/lib/nats-streaming
 natssbin: nats-streaming-server
 nginxbase: /opt/cpca/nginx/
 nginxdistro: nginx-gost-1.18.0_amd64.deb
@@ -55,3 +57,5 @@ ra_address: 192.168.1.2
 ra_hostname: cprora
 pg_address: 192.168.1.3
 pg_hostname: cprodb
+aiastore: /var/lib/cpca/aia
+cdpstore: /var/lib/cpca/cdp

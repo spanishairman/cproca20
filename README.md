@@ -979,3 +979,65 @@ retry_files_enabled = False
   - :white_check_mark: отключили шифрование для подключения к службе __Stan__;
   - :white_check_mark: указали в качестве адреса для подключения к службе __Stan__ имя хоста центра сертификации вместо __localhost__;
   - :white_check_mark: ввели серийный номер и название компании.
+
+### Создание рабочих каталогов для служб Центра Сертификации, Nats-Streaming и Центра регистрации
+
+Здесь мы создаём следующие каталоги:
+
+  - /var/lib/nats-streaming/pkica-store - каталог хранения сообщений;
+  - /opt/cpca/nats-streaming/ssl - каталог хранения серверных и клиентских сертификатов и ключей Nats;
+  - /var/log/cpca - хранение журналов Центра Сертификации и Центра регистрации;
+  - /var/lib/cpca/cdp - каталог хранения списков отзыва на Центре регистрации;
+  - /var/lib/cpca/aia - хранилище сертификатов УЦ на Центре регистрации;
+
+Назначаем владелца - учетную запись службы Центра сертификации или службы Центра регистрации в зависимости от роли, выполняемой виртуальной машиной.
+
+Плейбук [play/10.create-folders.yml](vagrant/ansible.ca/play/10.create-folders.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 10 >>> CPROCA. CREATE FOLDERS SET OWNS | Create a messages store dir for nats-streaming-server. Create directories.
+  hosts: cprocaserver
+  become: true
+  tasks:
+    - name: CREATE FOLDERS SET OWNS. Create a messages, certificates store dirs for nats-streaming-server, log store dir for ca-server
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ item.ownname }}"
+      loop:
+        - { path: "{{ natslib }}/pkica-store", ownname: "{{ cpca_srv_acc }}" }
+        - { path: "{{ natsbase }}/ssl", ownname: "{{ cpca_srv_acc }}" }
+        - { path: "{{ calog }}", ownname: "{{ cpca_srv_acc }}" }
+
+- name: <<< PLAYBOOK 09 >>> CPRORA. CREATE FOLDERS SET OWNS | Create directories
+  hosts: cproraserver
+  become: true
+  tasks:
+    - name: CREATE FOLDERS SET OWNS. Create a crl, crt, log store dirs for ra-server
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ item.ownname }}"
+      loop:
+        - { path: "{{ cdpstore }}", ownname: "{{ cpra_srv_acc }}" }
+        - { path: "{{ aiastore }}", ownname: "{{ cpra_srv_acc }}" }
+        - { path: "{{ calog }}", ownname: "{{ cpra_srv_acc }}" }
+
+```
+</details> 
+
+Здесь на Центре сертификации создаются:
+
+  - :white_check_mark: /var/lib/nats-streaming/pkica-store - каталог хранения сообщений;
+  - :white_check_mark: /opt/cpca/nats-streaming/ssl - каталог хранения серверных и клиентских сертификатов и ключей Nats;
+  - :white_check_mark: /var/log/cpca - каталог для хранения журналов Центра Сертификации.
+
+На Центре регистрации:
+  - :white_check_mark: /var/lib/cpca/cdp - каталог хранения списков отзыва;
+  - :white_check_mark: /var/lib/cpca/aia - хранилище сертификатов УЦ;
+  - :white_check_mark: /var/log/cpca - каталог для хранения журналов Центра Регистрации
+
+Для всех созданных каталогов задаются владелец и разрешения. 
