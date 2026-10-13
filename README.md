@@ -1041,3 +1041,94 @@ retry_files_enabled = False
   - :white_check_mark: /var/log/cpca - каталог для хранения журналов Центра Регистрации.
 
 Для всех созданных каталогов задаются владелец и разрешения. 
+
+### Создание файлов служб и их регистрация
+#### Создание файлов служб CryptoPro.Ca.Service, nats-streaming-server, CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
+Для создания файлов .service на удалённых хостах будем использовать шаблоны _jinja2_. Плейбук для создания файлов и их копирования на удалённые серверы [play/12.services-creation.yml](vagrant/ansible.ca/play/12.services-creation.yml): 
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 11 >>> REGISTRATION OF SERVICES | Server cpcaserver, services CryptoPro.Ca.Service, Nats-Streaming-Server
+  hosts: cproca
+  become: true
+  tasks:
+    - name: REGISTRATION OF SERVICE CryptoPro.Ca.Service. Copy Template
+      vars:
+        description: 'CryptoPro.Ca.Service'
+        folder: 'CryptoPro.Ca.Service'
+        service: 'CryptoPro.Ca.Service'
+        identifier: 'cryptopro-ca-service'
+        owner: 'cpca-srv'
+        key: ''
+      ansible.builtin.template:
+        src: services.j2
+        dest: /etc/systemd/system/cryptopro.ca.service
+
+    - name: REGISTRATION OF SERVICE Nats-Streaming-Server. Copy Template
+      vars:
+        description: 'nats-streaming-server'
+        folder: 'nats-streaming'
+        service: 'nats-streaming-server'
+        identifier: 'nats-streaming-server'
+        owner: 'cpca-srv'
+        key: '-sc /opt/cpca/nats-streaming/nats.no-tls.conf'
+      ansible.builtin.template:
+        src: services.j2
+        dest: /etc/systemd/system/nats-streaming-server.service
+
+
+- name: <<< PLAYBOOK 11 >>> REGISTRATION OF SERVICES | Server cpraserver, services CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
+  hosts: cprora
+  become: true
+  tasks:
+    - name: REGISTRATION OF SERVICE CryptoPro.Ra.Service. Copy Template
+      vars:
+        description: 'CryptoPro.Ra.Service'
+        folder: 'CryptoPro.Ra.Service'
+        service: 'CryptoPro.Ra.Service'
+        identifier: 'cryptopro-ra-service'
+        owner: 'cpra-srv'
+        key: ''
+      ansible.builtin.template:
+        src: services.j2
+        dest: /etc/systemd/system/cryptopro.ra.service
+
+    - name: REGISTRATION OF SERVICE CryptoPro.Ra.Web.Service. Copy Template
+      vars:
+        description: 'CryptoPro.Ra.Web.Service'
+        folder: 'CryptoPro.Ra.Web'
+        service: 'CryptoPro.Ra.Web'
+        identifier: 'cryptopro-ra-web-service'
+        owner: 'cpra-srv'
+        key: ''
+      ansible.builtin.template:
+        src: services.j2
+        dest: /etc/systemd/system/cryptopro.ra.web.service
+
+```
+</details>
+
+Шаблон для создания файлов служб [play/templates/services.j2](vagrant/ansible.ca/play/templates/services.j2):
+
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+[Unit]
+Description={{ description }}
+[Service]
+WorkingDirectory=/opt/cpca/{{ folder }}/
+ExecStart=/opt/cpca/{{ folder }}/{{ service }} {{ key }}
+Restart=always
+# Restart service after 10 seconds if the dotnet service crashes:
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier={{ identifier }}
+User={{ owner }}
+[Install]
+WantedBy=multi-user.target
+
+```
+</details>

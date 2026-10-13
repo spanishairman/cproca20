@@ -1,0 +1,57 @@
+---
+- name: <<< PLAYBOOK 11 >>> REGISTRATION OF SERVICES | Server cpcaserver, services CryptoPro.Ca.Service, Nats-Streaming-Server
+  hosts: cproca
+  become: true
+  tasks:
+    - name: REGISTRATION OF SERVICE CryptoPro.Ca.Service. Copy Template
+      vars:
+        description: 'CryptoPro.Ca.Service'
+        folder: 'CryptoPro.Ca.Service'
+        service: 'CryptoPro.Ca.Service'
+        identifier: 'cryptopro-ca-service'
+        owner: 'cpca-srv'
+        key: ''
+      ansible.builtin.template:
+        src: services.j2
+        dest: /etc/systemd/system/cryptopro.ca.service
+
+    - name: REGISTRATION OF SERVICE Nats-Streaming-Server. Copy Template
+      vars:
+        description: 'nats-streaming-server'
+        folder: 'nats-streaming'
+        service: 'nats-streaming-server'
+        identifier: 'nats-streaming-server'
+        owner: 'cpca-srv'
+        key: '-sc /opt/cpca/nats-streaming/nats.no-tls.conf'
+      ansible.builtin.template:
+        src: services.j2
+        dest: /etc/systemd/system/nats-streaming-server.service
+
+
+- name: <<< PLAYBOOK 11 >>> REGISTRATION OF SERVICES | Server cpraserver, services CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
+  hosts: cprora
+  become: true
+  tasks:
+    - name: REGISTRATION OF SERVICE CryptoPro.Ra.Service. Copy Template
+      vars:
+        description: 'CryptoPro.Ra.Service'
+        folder: 'CryptoPro.Ra.Service'
+        service: 'CryptoPro.Ra.Service'
+        identifier: 'cryptopro-ra-service'
+        owner: 'cpra-srv'
+        key: ''
+      ansible.builtin.template:
+        src: services.j2
+        dest: /etc/systemd/system/cryptopro.ra.service
+
+    - name: REGISTRATION OF SERVICE CryptoPro.Ra.Web.Service. Copy Template
+      vars:
+        description: 'CryptoPro.Ra.Web.Service'
+        folder: 'CryptoPro.Ra.Web'
+        service: 'CryptoPro.Ra.Web'
+        identifier: 'cryptopro-ra-web-service'
+        owner: 'cpra-srv'
+        key: ''
+      ansible.builtin.template:
+        src: services.j2
+        dest: /etc/systemd/system/cryptopro.ra.web.service
