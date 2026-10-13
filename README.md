@@ -1050,7 +1050,7 @@ retry_files_enabled = False
 
 ```
 ---
-- name: <<< PLAYBOOK 11 >>> REGISTRATION OF SERVICES | Server cpcaserver, services CryptoPro.Ca.Service, Nats-Streaming-Server
+- name: <<< PLAYBOOK 12 >>> REGISTRATION OF SERVICES | Server cpcaserver, services CryptoPro.Ca.Service, Nats-Streaming-Server
   hosts: cproca
   become: true
   tasks:
@@ -1079,7 +1079,7 @@ retry_files_enabled = False
         dest: /etc/systemd/system/nats-streaming-server.service
 
 
-- name: <<< PLAYBOOK 11 >>> REGISTRATION OF SERVICES | Server cpraserver, services CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
+- name: <<< PLAYBOOK 12 >>> REGISTRATION OF SERVICES | Server cpraserver, services CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
   hosts: cprora
   become: true
   tasks:
