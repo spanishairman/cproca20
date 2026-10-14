@@ -1,0 +1,34 @@
+---
+- name: <<< PLAYBOOK 13 >>> REGISTRATION OF SERVICES | Server cproca
+  hosts: cproca
+  become: true
+  tasks:
+    - name: Force systemd to reread configs
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+
+    - name: REGISTRATION OF SERVICES. Enable and start services
+      ansible.builtin.service:
+        name: "{{ item.name }}"
+        enabled: true
+        state: started
+      loop:
+        - { name: cryptopro.ca.service }
+        - { name: nats-streaming-server.service }
+
+- name: <<< PLAYBOOK 11 >>> REGISTRATION OF SERVICES | Server cprora
+  hosts: cprora
+  become: true
+  tasks:
+    - name: Force systemd to reread configs
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+
+    - name: REGISTRATION OF SERVICES. Enable and start services
+      ansible.builtin.service:
+        name: "{{ item.name }}"
+        enabled: true
+        state: started
+      loop:
+        - { name: cryptopro.ra.service }
+        - { name: cryptopro.ra.web.service }

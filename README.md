@@ -1044,7 +1044,7 @@ retry_files_enabled = False
 
 ### Создание файлов служб и их регистрация
 #### Создание файлов служб CryptoPro.Ca.Service, nats-streaming-server, CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
-Для создания файлов .service на удалённых хостах будем использовать шаблоны _jinja2_. Плейбук для создания файлов и их копирования на удалённые серверы [play/12.services-creation.yml](vagrant/ansible.ca/play/12.services-creation.yml): 
+Для создания файлов _.service_ на удалённых хостах будем использовать шаблоны _jinja2_. Плейбук для создания файлов и их копирования на удалённые серверы [play/12.services-creation.yml](vagrant/ansible.ca/play/12.services-creation.yml): 
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -1109,6 +1109,14 @@ retry_files_enabled = False
 
 ```
 </details>
+
+Здесь мы на сервере Центра сертификации, используя шаблон _jinja2_, создали два файла служб в каталоге _/etc/systemd/system_:
+  - :white_check_mark: _cryptopro.ca.service_;
+  - :white_check_mark: _nats-streaming-server.service_.
+
+На сервере Центра регистрации, в каталоге _/etc/systemd/system_, так же создали два файла служб:
+  - :white_check_mark: _cryptopro.ra.service_;
+  - :white_check_mark: _cryptopro.ra.web.service_.
 
 Шаблон для создания файлов служб [play/templates/services.j2](vagrant/ansible.ca/play/templates/services.j2):
 
