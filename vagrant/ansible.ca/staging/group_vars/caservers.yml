@@ -20,6 +20,7 @@ cpca_db: cpcadb
 cpra_db: cpradb
 certreg_db: CertRegistry
 # --- CryptoPro CA/RA ---
+caname: "Тестовый Удостоверяющий Центр АО GAMMA-TRADE"
 company: АО \\"GAMMA-TRADE\\"
 licca: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 licra: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX

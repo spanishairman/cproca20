@@ -1186,3 +1186,93 @@ WantedBy=multi-user.target
 
 ```
 </details>
+
+#### Регистрация служб _cryptopro.ca.service_, _nats-streaming-server.service_, _cryptopro.ra.service_, _cryptopro.ra.web.service_
+
+Плейбук [play/13.services-registration.yml](vagrant/ansible.ca/play/13.services-registration.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 13 >>> REGISTRATION OF SERVICES | Server cproca
+  hosts: cproca
+  become: true
+  tasks:
+    - name: Force systemd to reread configs
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+
+    - name: REGISTRATION OF SERVICES. Enable and start services
+      ansible.builtin.service:
+        name: "{{ item.name }}"
+        enabled: true
+        state: started
+      loop:
+        - { name: cryptopro.ca.service }
+        - { name: nats-streaming-server.service }
+
+- name: <<< PLAYBOOK 13 >>> REGISTRATION OF SERVICES | Server cprora
+  hosts: cprora
+  become: true
+  tasks:
+    - name: Force systemd to reread configs
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+
+    - name: REGISTRATION OF SERVICES. Enable and start services
+      ansible.builtin.service:
+        name: "{{ item.name }}"
+        enabled: true
+        state: started
+      loop:
+        - { name: cryptopro.ra.service }
+        - { name: cryptopro.ra.web.service }
+
+```
+</details>
+
+Здесь мы на сервере Центра сертификации, зарегистрировали и запустили службы:
+  - :white_check_mark: _cryptopro.ca.service_;
+  - :white_check_mark: _nats-streaming-server.service_.
+
+На сервере Центра регистрации так же зарегистрировали и запустили две службы:
+  - :white_check_mark: _cryptopro.ra.service_;
+  - :white_check_mark: _cryptopro.ra.web.service_.
+
+### Создание экземпляра Центра сертификации и загрузка шаблонов по умолчанию
+
+Теперь нужно создать новый экземпляр Центра сертификации с именем "Тестовый Удостоверяющий Центр АО GAMMA-TRADE".
+Для этого используется плейбук [play/14.cproca-create-instance-load-tpls.yml](vagrant/ansible.ca/play/14.cproca-create-instance-load-tpls.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 14 >>> CPROCA | Create CA instance. Load Templates
+  hosts: cproca
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: CryptoPro CA. Create CA instance
+      ansible.builtin.shell: |
+        ./"{{ pkicabin }}" ca authority new --name "{{ caname }}"
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+
+    - name: CryptoPro CA. Add templates
+      ansible.builtin.shell: |
+        ./"{{ pkicabin }}" ca template add --default-template "{{ item.template }}"
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      loop:
+        - { template: Tls }
+        - { template: User }
+```
+</details>
+
+В данном примере был создан новый экземпляр ЦС и загружены два шаблона сертифкатов по умолчанию:
+  - :white_check_mark: Tls - сертификат TLS-сервера;
+  - :white_check_mark: User - сертификат пользователя.

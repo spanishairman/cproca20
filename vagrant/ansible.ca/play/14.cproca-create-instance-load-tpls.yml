@@ -1,0 +1,22 @@
+---
+- name: <<< PLAYBOOK 14 >>> CPROCA | Create CA instance. Load Templates
+  hosts: cproca
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: CryptoPro CA. Create CA instance
+      ansible.builtin.shell: |
+        ./"{{ pkicabin }}" ca authority new --name "{{ caname }}"
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+
+    - name: CryptoPro CA. Add templates
+      ansible.builtin.shell: |
+        ./"{{ pkicabin }}" ca template add --default-template "{{ item.template }}"
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      loop:
+        - { template: Tls }
+        - { template: User }
