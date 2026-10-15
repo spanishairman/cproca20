@@ -1,0 +1,27 @@
+---
+- name: <<< PLAYBOOK 11 >>> CPROCA | Create databases for CA service.
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: CryptoPro CA. Create databases for CA service
+      ansible.builtin.shell: |
+        yes | ./"{{ pkicabin }}" {{ item.db }} db new
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      loop:
+        - { db: ca }
+        - { db: cert-registry }
+
+- name: <<< PLAYBOOK 11 >>> CPRORA | Create databases for RA service.
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: CryptoPro RA. Create database for RA service
+      ansible.builtin.shell: |
+        yes | ./"{{ pkicabin }}" ra db new
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"

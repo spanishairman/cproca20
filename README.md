@@ -336,7 +336,7 @@ retry_files_enabled = False
   - :white_check_mark: с хоста __cproca__ для пользователя __cpca\_dbadmin__
   - :white_check_mark: с хоста __cprora__ для пользователя __cpra\_dbadmin__
 
-### Настройка PostgreSQL Server. Создание комплекта служебных баз данных и ролей, настройка привилегий
+### Настройка PostgreSQL Server. Создание комплекта баз данных и ролей, настройка привилегий
 Создание баз данных и ролей, а так-же, предоставление привилегий для этих ролей на созданных базах. Плейбук [05.postgres-create-dbs-roles.yml](vagrant/ansible.ca/play/05.postgres-create-dbs-roles.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
@@ -358,16 +358,15 @@ retry_files_enabled = False
         - { name: "{{ cpca_dbadmin }}", password: "{{ cpca_dbpass }}" }
         - { name: "{{ cpra_dbadmin }}", password: "{{ cpra_dbpass }}" }
 
-    - name: PostgreSQL. Configure Server. Create a new databases "{{ cpca_db }}" and "{{ cpra_db }}".
+    - name: PostgreSQL. Configure Server. Create a new databases "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}".
       community.postgresql.postgresql_db:
         name: "{{ item.name }}"
         owner: "{{ item.owner }}"
       loop:
-        - { name: "{{ cpca_db }}", owner: "{{ cpca_dbadmin }}" }
-        - { name: "{{ certreg_db }}", owner: "{{ cpca_dbadmin }}" }
-        - { name: "{{ cpra_db }}", owner: "{{ cpra_dbadmin }}" }
+        - { name: "{{ cpca_dbadmin }}", owner: "{{ cpca_dbadmin }}" }
+        - { name: "{{ cpra_dbadmin }}", owner: "{{ cpra_dbadmin }}" }
 
-    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}", "{{ certreg_db }}" and "{{ cpra_db }}", grant privileges on databases objects (database) for roles.
+    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}", grant privileges on databases objects (database) for roles.
       community.postgresql.postgresql_privs:
         database: "{{ item.database }}"
         privs: "{{ item.privs }}"
@@ -376,11 +375,10 @@ retry_files_enabled = False
         grant_option: "{{ item.grant_option }}"
         state: present
       loop:
-        - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
-        - { database: "{{ certreg_db }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
-        - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
+        - { database: "{{ cpca_dbadmin }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
+        - { database: "{{ cpra_dbadmin }}", roles: "{{ cpra_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
 
-    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_db }}", "{{ certreg_db }}" and "{{ cpra_db }}", grant privileges on databases objects (schema) for roles.
+    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}", grant privileges on databases objects (schema) for roles.
       community.postgresql.postgresql_privs:
         database: "{{ item.database }}"
         privs: "{{ item.privs }}"
@@ -389,9 +387,10 @@ retry_files_enabled = False
         objs: "{{ item.objs }}"
         state: present
       loop:
-        - { database: "{{ cpca_db }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
-        - { database: "{{ certreg_db }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
-        - { database: "{{ cpra_db }}", roles: "{{ cpra_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
+        - { database: "{{ cpca_dbadmin }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
+        - { database: "{{ cpra_dbadmin }}", roles: "{{ cpra_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
+
+
 ```
 </details>
 
@@ -400,17 +399,19 @@ retry_files_enabled = False
     - :heavy_check_mark: __cpca_dbadmin__ - администратор базы данных Центра сертификации;
     - :heavy_check_mark: __cpra_dbadmin__ - администратор базы данных Центра регистрации;
   - :white_check_mark: создали базы данных:
-    - :heavy_check_mark: __cpca_db__ - база данных Центра сертификации, владелец - __cpca_dbadmin__;
-    - :heavy_check_mark: __certreg_db__ - база данных Реестра сертификатов, владелец - __cpca_dbadmin__;
-    - :heavy_check_mark: __cpra_db__ - база данных Центра регистрации, владелец - __cpra_dbadmin__;
+    - :heavy_check_mark: __cpca_dbadmin__ - владелец - __cpca_dbadmin__;
+    - :heavy_check_mark: __cpra_dbadmin__ - владелец - __cpra_dbadmin__;
   - :white_check_mark: предоставили привилегии __ALL__ на базы данных:
-    - :heavy_check_mark: __cpca_db__ - для роли __cpca_dbadmin__;
-    - :heavy_check_mark: __certreg_db__ - для роли __cpca_dbadmin__;
-    - :heavy_check_mark: __cpra_db__ - для роли __cpra_dbadmin__;
+    - :heavy_check_mark: __cpca_dbadmin__ - для роли __cpca_dbadmin__;
+    - :heavy_check_mark: __cpra_dbadmin__ - для роли __cpra_dbadmin__;
   - :white_check_mark: предоставили привилегии __CREATE__ на тип __schema__ объекта __public__ баз данных:
-    - :heavy_check_mark: __cpca_db__ - для роли __cpca_dbadmin__;
-    - :heavy_check_mark: __certreg_db__ - для роли __cpca_dbadmin__;
-    - :heavy_check_mark: __cpra_db__ - для роли __cpra_dbadmin__;
+    - :heavy_check_mark: __cpca_dbadmin__ - для роли __cpca_dbadmin__;
+    - :heavy_check_mark: __cpra_dbadmin__ - для роли __cpra_dbadmin__;
+
+> [!IMPORTANT]
+> Рабочий комплект баз данных _Центра сертификации_, _Центра регистрации_ и _Реестра сертификатов_ будет создан позднее при помощи утилиты _pkica_.
+> А в данном случае были созданы роли и одноименные базы данных по причине того, что они требуются для работы этой утилиты с сервером баз данных. 
+> Если вместо служебных ролей __cpca_dbadmin__ и ___cpra_dbadmin__ в настройках подключения использовать встроенную роль _Postgres_, то данный шаг выполнять не требуется. 
 
 ### Центр сертификации и Центр регистрации. Создание группы безопасности и служебных пользователей. Настройка файлов аутентификации на сервере баз данных
 Для установки CRL в хранилище __LocalMachine\CA__ на серверах Центра Сертификации и Центра Регистрации создается группа __crl-writers__. В эту группу добавляется служебный пользователь, с правами которого работают службы ЦС и ЦР.
@@ -1041,6 +1042,51 @@ retry_files_enabled = False
   - :white_check_mark: /var/log/cpca - каталог для хранения журналов Центра Регистрации.
 
 Для всех созданных каталогов задаются владелец и разрешения. 
+
+### Postgresql. Создание служебных баз данных с помощью утилиты _pkica_
+Служебные базы данных Центра сертификации, Центра регистрации и Реестра сертификатов создаются при помощи утилиты _pkica_. Плейбук [play/11.cproca-create-db.yml](vagrant/ansible.ca/play/11.cproca-create-db.yml).
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 11 >>> CPROCA | Create databases for CA service.
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: CryptoPro CA. Create databases for CA service
+      ansible.builtin.shell: |
+        yes | ./"{{ pkicabin }}" {{ item.db }} db new
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      loop:
+        - { db: ca }
+        - { db: cert-registry }
+
+- name: <<< PLAYBOOK 11 >>> CPRORA | Create databases for RA service.
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: CryptoPro RA. Create database for RA service
+      ansible.builtin.shell: |
+        yes | ./"{{ pkicabin }}" ra db new
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+
+```
+</details>
+
+Здесь на Центре сертификации запускаются команды для создания:
+
+  - :white_check_mark: cpcadb - база данный Центра сертификации;
+  - :white_check_mark: CertRegistry - база данных Реестра сертификатов;
+
+На Центре регистрации запускается команда для создания:
+  - :white_check_mark: cpradb - база данный Центра регистрации;.
 
 ### Создание файлов служб и их регистрация
 #### Создание файлов служб CryptoPro.Ca.Service, nats-streaming-server, CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
