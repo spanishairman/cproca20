@@ -38,6 +38,8 @@ cpra_srv_acc: cpra-srv
 cabase: /opt/cpca
 cadistro: ca-linux-x64-1.63.0.32.zip
 calog: /var/log/cpca
+cacert: caroot
+cacont: cacont
 casrvbase: /opt/cpca/CryptoPro.Ca.Service
 rasrvbase: /opt/cpca/CryptoPro.Ra.Service
 rawebbase: /opt/cpca/CryptoPro.Ra.Web

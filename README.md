@@ -1276,3 +1276,52 @@ WantedBy=multi-user.target
 В данном примере был создан новый экземпляр ЦС и загружены два шаблона сертифкатов по умолчанию:
   - :white_check_mark: Tls - сертификат TLS-сервера;
   - :white_check_mark: User - сертификат пользователя.
+
+### Выпуск и установка самоподписанного сертификата
+Плейбук [play/15.cproca-release-install-ca-cert.yml](vagrant/ansible.ca/play/15.cproca-release-install-ca-cert.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 15 >>> CPROCA | Release, Install, Add a new CA certificate
+  hosts: cproca
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: CPROCA. Release a new CA certificate
+      ansible.builtin.shell: |
+        ./"{{ pkicabin }}" ca new-root-cert --out-file ~/{{ cacert }}.crt --key-index 0 --subject "CN={{ caname }};O={{ orgname }};C=RU" --container-name {{ cacont }} --no-pin --silent
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      tags:
+        - release
+
+    - name: CPROCA. Install CA certificates to storages
+      ansible.builtin.shell: |
+        ./certmgr -install -store uMy -file ~/"{{ cacert }}.crt" -provtype 80 -container "{{ cacont }}" -at_signature
+        yes o | ./certmgr -install -store uRoot -file ~/"{{ cacert }}.crt"
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbindir }}"
+      tags:
+        - install
+
+    - name: CPROCA. Add CA key
+      ansible.builtin.shell: |
+        export PATH=$PATH:"{{ cspbindir }}"
+        ./"{{ pkicabin }}" ca signing-key add --name "{{ caname }}" --thumbprint $(certmgr -list -file ~/"{{ cacert }}.crt" | grep SHA1 | awk '{print $4}') --store-name My --store-location CurrentUser --no-pin
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      tags:
+        - export
+```
+</details>
+
+Здесь мы:
+  - :white_check_mark: создали ключ и сертификат корневого ЦС;
+  - :white_check_mark: установили сертификат ЦС в хранилище My пользователя, от имени которого запускается сервис ЦС;
+  - :white_check_mark: установили сертификат ЦС в хранилище Root пользователя, от имени которого запускается сервис ЦС;
+  - :white_check_mark: добавили ключ подписи ЦС экземпляру ЦС, чтобы использовать его для подписи сертификатов и CRL.

@@ -36,10 +36,10 @@
       tags:
       - license
 
-    - name: CONFIGURE CSP. Generate Gamma.
+    - name: CONFIGURE CSP. Add Gamma.
       ansible.builtin.shell: |
-        cp "{{ dst_dirinst }}"/gamma/kis_1 /var/opt/cprocsp/dsrf/db1/
-        cp "{{ dst_dirinst }}"/gamma/kis_1 /var/opt/cprocsp/dsrf/db2/
+        cp "{{ dst_dirinst }}"/Gamma/db1/kis_1 /var/opt/cprocsp/dsrf/db1/
+        cp "{{ dst_dirinst }}"/Gamma/db2/kis_1 /var/opt/cprocsp/dsrf/db2/
         chmod -R 777 "/var/opt/cprocsp/dsrf/"
         "{{ cspsbindir }}"/cpconfig -hardware rndm -add cpsd -name 'cpsd rng' -level 3
         "{{ cspsbindir }}"/cpconfig -hardware rndm -configure cpsd -add string /db1/kis_1 /var/opt/cprocsp/dsrf/db1/kis_1
