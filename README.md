@@ -316,18 +316,26 @@ retry_files_enabled = False
       dest: /etc/postgresql/{{ pg_ver }}/main/pg_hba.conf
       contype: host
       users: "{{ item.users }}"
-      source: "{{ item.source }}"
+      source: "{{ item.source }}/32"
       databases: all
       method: md5
       create: true
     loop:
-      - { source: "{{ hostvars['cproca'].ansible_host }}", users: "{{ cpca_dbadmin }}" }
-      - { source: "{{ hostvars['cprora'].ansible_host }}", users: "{{ cpra_dbadmin }}" }
+      - { source: "{{ ca_address }}", users: "{{ cpca_dbadmin }}" }
+      - { source: "{{ ra_address }}", users: "{{ cpra_dbadmin }}" }
+
+  - name: CONFIGURE POSTGRESQL. Configure Server. Edit postgresql.conf configuration file. Set listen_addresses = '*'
+    ansible.builtin.lineinfile:
+      path: /etc/postgresql/{{ pg_ver }}/main/postgresql.conf
+      line: "listen_addresses = '*'"
+      insertafter: "#listen_addresses = 'localhost'"
+      firstmatch: yes
+      state: present
 
   - name: CONFIGURE POSTGRESQL. Configure Server. Restart service PostgreSQL.
     ansible.builtin.service:
       name: postgresql.service
-      state: restarted 
+      state: restarted
 ```
 
 </details>
