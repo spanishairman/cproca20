@@ -1333,3 +1333,69 @@ WantedBy=multi-user.target
   - :white_check_mark: установили сертификат ЦС в хранилище My пользователя, от имени которого запускается сервис ЦС;
   - :white_check_mark: установили сертификат ЦС в хранилище Root пользователя, от имени которого запускается сервис ЦС;
   - :white_check_mark: добавили ключ подписи ЦС экземпляру ЦС, чтобы использовать его для подписи сертификатов и CRL.
+
+### Изменение настроек Центра сертификации
+В этой главе нам нужно задать расписние выпуска списков отзыва, экспортировать настройки в текстовый файл в формате _json_, отредактировать в нём часть параметров и импортировать новые настройки из этого файла.
+Плейбук [play/16.cproca-configure-ca.yml](vagrant/ansible.ca/play/16.cproca-configure-ca.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 16 >>> CPROCA | Configure CA and CA Shedule
+  hosts: cproca
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: CryptoPro CA. Configure Settings for CA and CA Shedule. Sheduling and Export
+      ansible.builtin.shell: |
+        ./"{{ pkicabin }}" ca crl schedule update --name "{{ caname }}" --base "0 0 18 * * *" --delta -
+        ./"{{ pkicabin }}" ca authority export-settings --name "{{ caname }}" --file ~/"{{ casettings }}" --format Json
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      tags: export
+
+    - name: CryptoPro CA. Configure Settings for CA and CA Shedule. Edit
+      ansible.builtin.lineinfile:
+        path: ~/{{ casettings }}
+        backup: "{{ item.backup }}"
+        search_string: "{{ item.ss }}"
+        line: "{{ item.line }}"
+      loop:
+        - { backup: true, ss: "DisableAkiIssuerNameAndSerial", line: '"DisableAkiIssuerNameAndSerial": true,' }
+        - { backup: false, ss: "QualifiedCertMode", line: '"QualifiedCertMode": "AttrFormat",' }
+        - { backup: false, ss: "AutoLoadKey", line: '"AutoLoadKey": true,' }
+        - { backup: false, ss: "CrlPublicationUrls", line: '"CrlPublicationUrls": [ { "Usage": "CdpIncludeInCert", "Urls": [ "http://{{ ra_hostname }}/cdp/%17.crl" ] } ],' }
+        - { backup: false, ss: "CaCertPublicationUrls", line: '"CaCertPublicationUrls": [ { "Usage": "AiaIncludeInCert", "Url": "http://{{ ra_hostname }}/aia/{{ cacert }}" } ],' }
+
+    - name: CryptoPro CA. Configure Settings for CA and CA Shedule. Import
+      ansible.builtin.shell: |
+        ./"{{ pkicabin }}" ca authority import-settings --name "{{ caname }}" --file ~/"{{ casettings }}" --format Json
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+
+- name: <<< PLAYBOOK 16 >>> CPROCA | Restart CA
+  hosts: cproca
+  become: true
+  tasks:
+    - name: CryptoPro CA. Restart service.
+      ansible.builtin.service:
+        name: cryptopro.ca.service
+        state: restarted
+
+```
+</details>
+
+Здесь мы:
+  - :white_check_mark: задали расписание для выпуска списков отзыва каждые 18 часов, при этом отключили выпуск разностного списка отзыва;
+  - :white_check_mark: экспортировали настройки по умолчанию с действуещего Центра сертификации в текстовый _json_-файл;
+  - :white_check_mark: при помощи модуля _lineinfile_ отредактировали в полученном файле следующие параметры:
+    - :heavy_check_mark: "DisableAkiIssuerNameAndSerial": _true_ - отключили расширение «Идентификатор ключа центра сертификатов» (Authority Key Identifier, OID 2.5.29.35);
+    - :heavy_check_mark: "QualifiedCertMode": "AttrFormat" -  формат атрибутов имени в субъекте проверяется только при их наличии (ИНН, ИНН ЮЛ, СНИЛС, ОГРН, ОГРНИП);
+    - :heavy_check_mark: "AutoLoadKey": _true_ - разрешить автозагрузку ключей для экземпляра ЦС;
+    - :heavy_check_mark: "CrlPublicationUrls" - указали включать адрес точки распространения _CRL_ в расширение «Точки распространения списков отзыва (CRL)» сертификата;
+    - :heavy_check_mark: "CaCertPublicationUrls" - указали включать адрес точек доступа к информации о ЦС в расширение «Доступ к сведениям Центра сертификации»;
+  - :white_check_mark: импортировали новые настройки из файла в Центр сертификации;
+  - :white_check_mark: перезапустили службу ЦС для применения новых параметров.
