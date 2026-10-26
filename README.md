@@ -1402,7 +1402,7 @@ WantedBy=multi-user.target
 
 ### Создание запросов на выпуск сертификатов на Центре Регистрации
 
- На сервере Центра Регистрации выполняются запросы на выпуск сертификатов для:
+На сервере Центра Регистрации выполняются запросы на выпуск сертификатов для:
   - Сервер Центра Регистрации;
   - Клиент Центра Регистрации;
   - Клиент Веб-службы Центра Регистрации;
@@ -1455,3 +1455,46 @@ WantedBy=multi-user.target
   - :white_check_mark: утилиты _pkica_Центра регистрации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
   - :white_check_mark: оператора Центра регистрации для создания защищённого подключения с использованием шаблона __"1.2.643.2.2.46.0.6"__;
   - :white_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов с использованием шаблона __"1.2.643.2.2.46.0.8"__.
+
+### Создание запросов на выпуск сертификатов на Центре Сертификации
+
+На Центре Сертификации создаются запросы на выпуск сертификатов для:
+  - Nats-Server - для работы серверной части службы очередей _Nats_;
+  - Nats-Client - для клиентского подключения к серверной части службы очередей _Nats_ со стороны её клиентской части;
+  - PKICA-Client - для подключения к службе очередей _Nats_ со стороны утилиты _Pkica_;
+  - CA-Client - для подключения к службе очередей со стороны службы _Cryptopro.Ca_.
+
+Плейбук [play/18.cproca-certs-req.yml](vagrant/ansible.ca/play/18.cproca-certs-req.yml):
+
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 18 >>> CPROCA | Creating a Certificate Issue Request for NATS Server, NATS Client, PKICA Client, CA Client
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: CPORA. Creating a Certificate Issue Request for NATS Server, NATS Client, PKICA Client, CA Client
+      ansible.builtin.shell: |
+        test -f {{ item.file }} && ./{{ pkicabin }} ca new-cert-req --subject "{{ item.subject }}" --key-spec "KeyExchange" --container-name {{ item.container }} --template "{{ item.template }}" --out-file {{ item.file }} {{ item.additional }} --use-existing-key
+        test -f {{ item.file }} || ./{{ pkicabin }} ca new-cert-req --subject "{{ item.subject }}" --key-spec "KeyExchange" --container-name {{ item.container }} --template "{{ item.template }}" --out-file {{ item.file }} {{ item.additional }}
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      loop:
+        - { subject: "CN={{ inventory_hostname }}, C=RU, 1.2.643.2.2.44.5={{ inventory_hostname }}.{{ ca_domain }}", container: "{{ crt_ca_natssrv }}_cont", template: "{{ tpl_tlssrv }}", file: "{{ ansible_user_dir }}/{{ crt_ca_natssrv }}.req" , additional: "--no-pin --exportable" }
+        - { subject: "CN=nats, C=RU", container: "{{ crt_ca_natsclnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ca_natsclnt }}.req" , additional: "--no-pin --exportable" }
+        - { subject: "CN=pkica, C=RU", container: "{{ crt_ca_pkicaclnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ca_pkicaclnt }}.req" , additional: "--no-pin --exportable" }
+        - { subject: "CN=ca, C=RU", container: "{{ crt_ca_caclnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ca_caclnt }}.req" , additional: "--no-pin --exportable" }
+
+```
+</details>
+
+В данном примере на сервере Центра регистрации были выполнены запросы на выпуск сертификатов для:
+
+  - :white_check_mark: серверной части службы очередей _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.3"__;
+  - :white_check_mark: клиентской части службы очередей _Nats_ для подключения к её серверной компоненте с использованием шаблона __"1.2.643.2.2.46.0.6"__;
+  - :white_check_mark: утилиты _Pkica_ Центра сертификации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
+  - :white_check_mark: службы Центра сертификации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
