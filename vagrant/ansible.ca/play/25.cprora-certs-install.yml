@@ -1,0 +1,40 @@
+---
+- name: <<< PLAYBOOK 25 >>> INSTALL | Install certificates on a Registrations Authority.
+  hosts: cprora
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: CPRORA. Install Cerificates to uMy
+      ansible.builtin.shell: |
+        ./{{ cryptcpbin }} -instcert -from_request {{ ansible_user_dir }}/{{ item }}.cer
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbindir }}"
+      loop:
+        - "{{ crt_ra_srv }}"
+        - "{{ crt_ra_clnt }}"
+        - "{{ crt_ra_webclnt }}"
+        - "{{ crt_ra_pkicaclnt }}"
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"
+
+    - name: CPRORA. Export Cerificate "ra_srv" to "ra_srv.pfx"
+      ansible.builtin.shell: |
+        export PATH=$PATH:{{ cspbindir }}
+        idcprorasrv=$(certmgr -list -file {{ ansible_user_dir }}/{{ crt_ra_srv }}.cer | grep "SHA1" | awk '{print $4}')
+        echo "$idcprorasrv" && certmgr -export -pfx -pin 11111111 -thumbprint $idcprorasrv -dest {{ ansible_user_dir }}/{{ crt_ra_srv }}.pfx
+      args:
+        executable: /bin/bash
+      tags: export
+
+- name: <<< PLAYBOOK 25 >>> INSTALL | Install rootca certificate on a Registrations Authority.
+  hosts: cprora
+  become: true
+  tasks:
+    - name: CPRORA. Install Cerificates to mRoot
+      ansible.builtin.shell: |
+        # export PATH=$PATH:"{{ cspbindir }}"
+        yes o | ./certmgr -install -store mRoot -file /home/{{ cpra_srv_acc }}/{{ cacert }}.cer
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbindir }}"

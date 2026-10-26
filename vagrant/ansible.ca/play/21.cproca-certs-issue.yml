@@ -1,0 +1,23 @@
+---
+- name: <<< PLAYBOOK 21 >>> ISSUE OF CERTS | Issue a certificates.
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: ISSUE OF CERTS
+      ansible.builtin.shell: |
+        test -f {{ ansible_user_dir }}/{{ item }}.cer || ./{{ pkicabin }} ca issue-cert --file {{ ansible_user_dir }}/{{ item }}.req --out-file {{ ansible_user_dir }}/{{ item }}.cer --name "{{ caname }}"
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      loop:
+        - "{{ crt_ca_natsclnt }}"
+        - "{{ crt_ca_natssrv }}"
+        - "{{ crt_ca_pkicaclnt }}"
+        - "{{ crt_ca_caclnt }}"
+        - "{{ crt_ra_srv }}"
+        - "{{ crt_ra_clnt }}"
+        - "{{ crt_ra_webclnt }}"
+        - "{{ crt_ra_pkicaclnt }}"
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"

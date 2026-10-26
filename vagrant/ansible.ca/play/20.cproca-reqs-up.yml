@@ -1,0 +1,17 @@
+---
+- name: <<< PLAYBOOK 20 >>> UP REQUESTS | Upload requests for certificates to CA.
+  hosts: cproca
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: UP.
+      ansible.builtin.copy:
+        src: "{{ localdir }}/share/{{ item.file }}.req"
+        dest: "{{ ansible_user_dir }}/{{ item.file }}.req"
+      loop:
+        - { file: "{{ crt_ra_srv }}" }
+        - { file: "{{ crt_ra_clnt }}" }
+        - { file: "{{ crt_ra_webclnt }}" }
+        - { file: "{{ crt_ra_pkicaclnt }}" }
+        - { file: "{{ crt_opertls }}" }
+        - { file: "{{ crt_opersign }}" }

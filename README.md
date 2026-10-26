@@ -1399,3 +1399,59 @@ WantedBy=multi-user.target
     - :heavy_check_mark: "CaCertPublicationUrls" - указали включать адрес точек доступа к информации о ЦС в расширение «Доступ к сведениям Центра сертификации»;
   - :white_check_mark: импортировали новые настройки из файла в Центр сертификации;
   - :white_check_mark: перезапустили службу ЦС для применения новых параметров.
+
+### Создание запросов на выпуск сертификатов на Центре Регистрации
+
+ На сервере Центра Регистрации выполняются запросы на выпуск сертификатов для:
+  - Сервер Центра Регистрации;
+  - Клиент Центра Регистрации;
+  - Клиент Веб-службы Центра Регистрации;
+  - Оператор (TLS);
+  - Оператор (Sign).
+
+Плейбук [play/17.cprora-certs-req.yml](vagrant/ansible.ca/17.cprora-certs-req.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 17 >>> CPRORA | Creating a Certificate Issue Request for RA Server, RA Client, RA Web Client
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: CPORA. Creating a Certificate Issue Request for RA Server, RA Client, RA Web Client
+      ansible.builtin.shell: |
+        test -f {{ item.file }} && ./"{{ pkicabin }}" ca new-cert-req --subject "{{ item.subject }}" --key-spec KeyExchange --container-name {{ item.container }} --template {{ item.template }} --out-file {{ item.file }} {{ item.additional }} --use-existing-key
+        test -f {{ item.file }} || ./"{{ pkicabin }}" ca new-cert-req --subject "{{ item.subject }}" --key-spec KeyExchange --container-name {{ item.container }} --template {{ item.template }} --out-file {{ item.file }} {{ item.additional }}
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      loop:
+        - { subject: "CN={{ inventory_hostname }}, C=RU, 1.2.643.2.2.44.5={{ inventory_hostname }}", container: "{{ crt_ra_srv }}_cont", template: "{{ tpl_tlssrv }}", file: "{{ ansible_user_dir }}/{{ crt_ra_srv }}.req" , additional: "--no-pin --exportable" }
+        - { subject: "CN=ra, C=RU", container: "{{ crt_ra_clnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ra_clnt }}.req" , additional: "--no-pin --exportable" }
+        - { subject: "CN=ra, C=RU", container: "{{ crt_ra_webclnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ra_webclnt }}.req" , additional: "--no-pin --exportable" }
+        - { subject: "CN=pkica, C=RU", container: "{{ crt_ra_pkicaclnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ra_pkicaclnt }}.req" , additional: "--no-pin --exportable" }
+
+    - name: CryptoPro RA. Creating a Certificate Issue Request for RA Operator TLS, RA Operator Sign
+      ansible.builtin.shell: |
+        test -f {{ item.file }} && ./"{{ pkicabin }}" ca new-cert-req --subject "{{ item.subject }}" --key-spec KeyExchange --container-name {{ item.container }} --template {{ item.template }} --out-file {{ item.file }} {{ item.additional }} --use-existing-key
+        test -f {{ item.file }} || ./"{{ pkicabin }}" ca new-cert-req --subject "{{ item.subject }}" --key-spec KeyExchange --container-name {{ item.container }} --template {{ item.template }} --out-file {{ item.file }} {{ item.additional }}
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      loop:
+        - { subject: "CN={{ crt_opertls }}, C=RU", container: "{{ crt_opertls }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_opertls }}.req" , additional: "--no-pin --exportable" }
+        - { subject: "CN={{ crt_opersign }}, C=RU", container: "{{ crt_opersign }}_cont", template: "{{ tpl_oper }}", file: "{{ ansible_user_dir }}/{{ crt_opersign }}.req" , additional: "--no-pin --exportable" }
+
+```
+</details>
+
+В данном примере на сервере Центра регистрации были выполнены запросы на выпуск сертификатов для:
+
+  - :white_check_mark: веб сервера Центра сертификации с использованием шаблона __"1.2.643.2.2.46.0.3"__;
+  - :white_check_mark: службы Центра регистрации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
+  - :white_check_mark: веб службы Центра регистрации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
+  - :white_check_mark: утилиты _pkica_Центра регистрации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
+  - :white_check_mark: оператора Центра регистрации для создания защищённого подключения с использованием шаблона __"1.2.643.2.2.46.0.6"__;
+  - :white_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов с использованием шаблона __"1.2.643.2.2.46.0.8"__.

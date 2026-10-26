@@ -1,0 +1,18 @@
+---
+- name: <<< PLAYBOOK 23 >>> UP CERIFICATES | Upload certificates to RA.
+  hosts: cprora
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: UP.
+      ansible.builtin.copy:
+        src: "{{ localdir }}/share/{{ item }}.cer"
+        dest: "{{ ansible_user_dir }}/{{ item }}.cer"
+      loop:
+        - "{{ crt_ra_srv }}"
+        - "{{ crt_ra_clnt }}"
+        - "{{ crt_ra_webclnt }}"
+        - "{{ crt_ra_pkicaclnt }}"
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"
+        - "{{ cacert }}"

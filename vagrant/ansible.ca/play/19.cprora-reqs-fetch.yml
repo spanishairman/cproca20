@@ -1,0 +1,18 @@
+---
+- name: <<< PLAYBOOK 19 >>> FETCH REQUESTS | Download requests for certificates from RA.
+  hosts: cprora
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: FETCH.
+      ansible.builtin.fetch:
+        src: "{{ ansible_user_dir }}/{{ item.file }}.req"
+        dest: "{{ localdir }}/share/"
+        flat: 'true'
+      loop:
+        - { file: "{{ crt_ra_srv }}" }
+        - { file: "{{ crt_ra_clnt }}" }
+        - { file: "{{ crt_ra_webclnt }}" }
+        - { file: "{{ crt_ra_pkicaclnt }}" }
+        - { file: "{{ crt_opertls }}" }
+        - { file: "{{ crt_opersign }}" }

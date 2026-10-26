@@ -1,0 +1,19 @@
+---
+- name: <<< PLAYBOOK 22 >>> FETCH CERTS | Download certificates from CA.
+  hosts: cproca
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: FETCH.
+      ansible.builtin.fetch:
+        src: "{{ ansible_user_dir }}/{{ item }}.cer"
+        dest: "{{ localdir }}/share/"
+        flat: 'true'
+      loop:
+        - "{{ crt_ra_srv }}"
+        - "{{ crt_ra_clnt }}"
+        - "{{ crt_ra_webclnt }}"
+        - "{{ crt_ra_pkicaclnt }}"
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"
+        - "{{ cacert }}"
