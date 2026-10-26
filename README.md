@@ -1409,7 +1409,7 @@ WantedBy=multi-user.target
   - Оператор (TLS);
   - Оператор (Sign).
 
-Плейбук [play/17.cprora-certs-req.yml](vagrant/ansible.ca/17.cprora-certs-req.yml):
+Плейбук [play/17.cprora-certs-req.yml](vagrant/ansible.ca/play/17.cprora-certs-req.yml):
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
