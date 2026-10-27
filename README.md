@@ -1449,7 +1449,7 @@ WantedBy=multi-user.target
 
 В данном примере на сервере Центра регистрации были выполнены запросы на выпуск сертификатов для:
 
-  - :white_check_mark: веб сервера Центра сертификации с использованием шаблона __"1.2.643.2.2.46.0.3"__;
+  - :white_check_mark: веб сервера Центра регистрации с использованием шаблона __"1.2.643.2.2.46.0.3"__;
   - :white_check_mark: службы Центра регистрации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
   - :white_check_mark: веб службы Центра регистрации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
   - :white_check_mark: утилиты _pkica_Центра регистрации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
@@ -1498,3 +1498,66 @@ WantedBy=multi-user.target
   - :white_check_mark: клиентской части службы очередей _Nats_ для подключения к её серверной компоненте с использованием шаблона __"1.2.643.2.2.46.0.6"__;
   - :white_check_mark: утилиты _Pkica_ Центра сертификации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
   - :white_check_mark: службы Центра сертификации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
+
+### Копирование полученных запросов на выпуск сертификатов с ЦР на ЦС
+Для передачи запросов на выпуск сертификатов задействуется управляющая машина. Таким образом, файлы запросов сначала скачиваются на хост управления с Центра Регистрации, 
+затем загружаются с него на Центр Сертификации. С помощью плейбука [play/19.cprora-reqs-fetch.yml](vagrant/ansible.ca/play/19.cprora-reqs-fetch.yml) скопируем все ранее созданные запросы 
+на хост управления в каталог _share_:
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 19 >>> FETCH REQUESTS | Download requests for certificates from RA.
+  hosts: cprora
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: FETCH.
+      ansible.builtin.fetch:
+        src: "{{ ansible_user_dir }}/{{ item.file }}.req"
+        dest: "{{ localdir }}/share/"
+        flat: 'true'
+      loop:
+        - { file: "{{ crt_ra_srv }}" }
+        - { file: "{{ crt_ra_clnt }}" }
+        - { file: "{{ crt_ra_webclnt }}" }
+        - { file: "{{ crt_ra_pkicaclnt }}" }
+        - { file: "{{ crt_opertls }}" }
+        - { file: "{{ crt_opersign }}" }
+```
+</details>
+
+Затем загрузим запросы на Центр регистрации. Плейбук [play/20.cproca-reqs-up.yml](vagrant/ansible.ca/play/20.cproca-reqs-up.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+ 
+```
+---
+- name: <<< PLAYBOOK 20 >>> UP REQUESTS | Upload requests for certificates to CA.
+  hosts: cproca
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: UP.
+      ansible.builtin.copy:
+        src: "{{ localdir }}/share/{{ item.file }}.req"
+        dest: "{{ ansible_user_dir }}/{{ item.file }}.req"
+      loop:
+        - { file: "{{ crt_ra_srv }}" }
+        - { file: "{{ crt_ra_clnt }}" }
+        - { file: "{{ crt_ra_webclnt }}" }
+        - { file: "{{ crt_ra_pkicaclnt }}" }
+        - { file: "{{ crt_opertls }}" }
+        - { file: "{{ crt_opersign }}" }
+```
+</details>
+
+В данном разделе мы скачали на управляющий хост в каталог _share_ с Центра регистрации, а затем загрузили на Центр сертификации следующие запросы на выпуск сертификатов:
+
+  - :white_check_mark: веб сервера Центра регистрации;
+  - :white_check_mark: службы Центра регистрации для подключения к _Nats_;
+  - :white_check_mark: веб службы Центра регистрации для подключения к _Nats_;
+  - :white_check_mark: утилиты _pkica_Центра регистрации для подключения к _Nats_;
+  - :white_check_mark: оператора Центра регистрации для создания защищённого подключения;
+  - :white_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов.
