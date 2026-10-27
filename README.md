@@ -1528,7 +1528,7 @@ WantedBy=multi-user.target
 ```
 </details>
 
-Затем загрузим запросы из каталога _share_ на Центр регистрации. Плейбук [play/20.cproca-reqs-up.yml](vagrant/ansible.ca/play/20.cproca-reqs-up.yml):
+Затем загрузим запросы из каталога _share_ на Центр сертификации. Плейбук [play/20.cproca-reqs-up.yml](vagrant/ansible.ca/play/20.cproca-reqs-up.yml):
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
  
