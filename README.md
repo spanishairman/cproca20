@@ -1616,7 +1616,7 @@ WantedBy=multi-user.target
   - :white_check_mark: Центре сертификации для:
     - :heavy_check_mark: клиентской части службы очередей _Nats_;
     - :heavy_check_mark: серверной части службы очередей _Nats_;
-    - :heavy_check_mark: утилиты _Pkica_ Центра сертификации для подключения к _Nats_;
+    - :heavy_check_mark: утилиты _pkica_ Центра сертификации для подключения к _Nats_;
     - :heavy_check_mark: службы Центра сертификации для подключения к _Nats_;
   - :white_check_mark: Центре регистрации для:
     - :heavy_check_mark: веб сервера Центра регистрации;
