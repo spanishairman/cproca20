@@ -1613,12 +1613,12 @@ WantedBy=multi-user.target
 </details>
 
 Здесь мы выпустили сертификаты на основе запросов, созданных на:
-  - :white_check_mark: Центре сертификации:
+  - :white_check_mark: Центре сертификации для:
     - :heavy_check_mark: клиентской части службы очередей _Nats_;
     - :heavy_check_mark: серверной части службы очередей _Nats_;
     - :heavy_check_mark: утилиты _Pkica_ Центра сертификации для подключения к _Nats_;
     - :heavy_check_mark: службы Центра сертификации для подключения к _Nats_;
-  - :white_check_mark: Центре регистрации:
+  - :white_check_mark: Центре регистрации для:
     - :heavy_check_mark: веб сервера Центра регистрации;
     - :heavy_check_mark: службы Центра регистрации для подключения к _Nats_;
     - :heavy_check_mark: веб службы Центра регистрации для подключения к _Nats_;
