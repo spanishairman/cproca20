@@ -1577,3 +1577,51 @@ WantedBy=multi-user.target
   - :white_check_mark: утилиты _pkica_Центра регистрации для подключения к _Nats_;
   - :white_check_mark: оператора Центра регистрации для создания защищённого подключения;
   - :white_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов.
+
+### Выпуск сертификатов безопасности на основе всех ранее созданных запросов
+
+После того как все запросы на выпуск сертификатов были размещены в домашней директори учетной записи _cpca-srv_ Центра сертификации, можно выпустить целевые сертификаты. Для этого используем плейбук 
+[play/21.cproca-certs-issue.yml](vagrant/ansible.ca/play/21.cproca-certs-issue.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 21 >>> ISSUE OF CERTS | Issue a certificates.
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: ISSUE OF CERTS
+      ansible.builtin.shell: |
+        test -f {{ ansible_user_dir }}/{{ item }}.cer || ./{{ pkicabin }} ca issue-cert --file {{ ansible_user_dir }}/{{ item }}.req --out-file {{ ansible_user_dir }}/{{ item }}.cer --name "{{ caname }}"
+      args:
+        executable: /bin/bash
+        chdir: "{{ pkicabase }}"
+      loop:
+        - "{{ crt_ca_natsclnt }}"
+        - "{{ crt_ca_natssrv }}"
+        - "{{ crt_ca_pkicaclnt }}"
+        - "{{ crt_ca_caclnt }}"
+        - "{{ crt_ra_srv }}"
+        - "{{ crt_ra_clnt }}"
+        - "{{ crt_ra_webclnt }}"
+        - "{{ crt_ra_pkicaclnt }}"
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"
+```
+</details>
+
+Здесь мы выпустили сертификаты на основе запросов, созданных на:
+  - :white_check_mark: Центра сертификации:
+    - :heavy_check_mark: клиентской части службы очередей _Nats_;
+    - :heavy_check_mark: серверной части службы очередей _Nats_;
+    - :heavy_check_mark: утилиты _Pkica_ Центра сертификации для подключения к _Nats_;
+    - :heavy_check_mark: службы Центра сертификации для подключения к _Nats_;
+  - :white_check_mark: Центра регистрации:
+    - :heavy_check_mark: веб сервера Центра регистрации;
+    - :heavy_check_mark: службы Центра регистрации для подключения к _Nats_;
+    - :heavy_check_mark: веб службы Центра регистрации для подключения к _Nats_;
+    - :heavy_check_mark: утилиты _pkica_Центра регистрации для подключения к _Nats_;
+    - :heavy_check_mark: оператора Центра регистрации для создания защищённого подключения;
+    - :heavy_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов.
