@@ -1625,3 +1625,62 @@ WantedBy=multi-user.target
     - :heavy_check_mark: утилиты _pkica_ Центра регистрации для подключения к _Nats_;
     - :heavy_check_mark: оператора Центра регистрации для создания защищённого подключения;
     - :heavy_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов.
+
+Теперь сертификаты, котрые были выпущены для _Центра регистрации_, необходио будет скопировать обратно на сервер ЦР.
+
+### Копирование выпущенных сертификатов безопасности с ЦС на ЦР
+Для передачи сертификатов с _Центра Сертификации_ на _Центр Регистрации_ задействуется управляющая машина. Таким образом, файлы сертификатов сначала скачиваются 
+на хост управления с _Центра Сертификации_, затем загружаются с него на _Центр Регистрации_.
+Для этого задействуем дла плейбука, [play/22.cproca-certs-fetch.yml](vagrant/ansible.ca/play/22.cproca-certs-fetch.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 22 >>> FETCH CERTS | Download certificates from CA.
+  hosts: cproca
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: FETCH.
+      ansible.builtin.fetch:
+        src: "{{ ansible_user_dir }}/{{ item }}.cer"
+        dest: "{{ localdir }}/share/"
+        flat: 'true'
+      loop:
+        - "{{ crt_ra_srv }}"
+        - "{{ crt_ra_clnt }}"
+        - "{{ crt_ra_webclnt }}"
+        - "{{ crt_ra_pkicaclnt }}"
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"
+        - "{{ cacert }}"
+```
+</details>
+
+и [play/23.cprora-certs-up.yml](vagrant/ansible.ca/play/23.cprora-certs-up.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 23 >>> UP CERIFICATES | Upload certificates to RA.
+  hosts: cprora
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: UP.
+      ansible.builtin.copy:
+        src: "{{ localdir }}/share/{{ item }}.cer"
+        dest: "{{ ansible_user_dir }}/{{ item }}.cer"
+      loop:
+        - "{{ crt_ra_srv }}"
+        - "{{ crt_ra_clnt }}"
+        - "{{ crt_ra_webclnt }}"
+        - "{{ crt_ra_pkicaclnt }}"
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"
+        - "{{ cacert }}"
+```
+</details>
+
