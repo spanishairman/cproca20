@@ -1629,6 +1629,7 @@ WantedBy=multi-user.target
 Теперь сертификаты, котрые были выпущены для _Центра регистрации_, необходио будет скопировать обратно на сервер ЦР.
 
 ### Копирование выпущенных сертификатов безопасности с ЦС на ЦР
+
 Для передачи сертификатов с _Центра Сертификации_ на _Центр Регистрации_ задействуется управляющая машина. Таким образом, файлы сертификатов сначала скачиваются 
 на хост управления с _Центра Сертификации_, затем загружаются с него на _Центр Регистрации_.
 Для этого задействуем дла плейбука, [play/22.cproca-certs-fetch.yml](vagrant/ansible.ca/play/22.cproca-certs-fetch.yml):
@@ -1681,6 +1682,82 @@ WantedBy=multi-user.target
         - "{{ crt_opertls }}"
         - "{{ crt_opersign }}"
         - "{{ cacert }}"
+```
+</details>
+
+### Установка сертификатов безопасности на серверах Центра Сертификации и Центра Регистрации
+
+Установка сертификатов в хранилище с привязкой к закрытому ключу для учетных записей, с правами которых работают службы. 
+На Центре сертификации - плейбук [play/24.cproca-certs-install.yml](vagrant/ansible.ca/play/24.cproca-certs-install.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 24 >>> INSTALL | Install certificates on a Certifications Authority.
+  hosts: cproca
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  tasks:
+    - name: INSTALL
+      ansible.builtin.shell: |
+        ./{{ cryptcpbin }} -instcert -from_request {{ ansible_user_dir }}/{{ item }}.cer
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbindir }}"
+      loop:
+        - "{{ crt_ca_natsclnt }}"
+        - "{{ crt_ca_natssrv }}"
+        - "{{ crt_ca_pkicaclnt }}"
+        - "{{ crt_ca_caclnt }}"
+```
+</details>
+
+На Центре регистрации - плейбук [play/25.cprora-certs-install.yml](vagrant/ansible.ca/play/25.cprora-certs-install.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 25 >>> INSTALL | Install certificates on a Registrations Authority.
+  hosts: cprora
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: CPRORA. Install Cerificates to uMy
+      ansible.builtin.shell: |
+        ./{{ cryptcpbin }} -instcert -from_request {{ ansible_user_dir }}/{{ item }}.cer
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbindir }}"
+      loop:
+        - "{{ crt_ra_srv }}"
+        - "{{ crt_ra_clnt }}"
+        - "{{ crt_ra_webclnt }}"
+        - "{{ crt_ra_pkicaclnt }}"
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"
+
+    - name: CPRORA. Export Cerificate "ra_srv" to "ra_srv.pfx"
+      ansible.builtin.shell: |
+        export PATH=$PATH:{{ cspbindir }}
+        idcprorasrv=$(certmgr -list -file {{ ansible_user_dir }}/{{ crt_ra_srv }}.cer | grep "SHA1" | awk '{print $4}')
+        echo "$idcprorasrv" && certmgr -export -pfx -pin 11111111 -thumbprint $idcprorasrv -dest {{ ansible_user_dir }}/{{ crt_ra_srv }}.pfx
+      args:
+        executable: /bin/bash
+      tags: export
+
+- name: <<< PLAYBOOK 25 >>> INSTALL | Install rootca certificate on a Registrations Authority.
+  hosts: cprora
+  become: true
+  tasks:
+    - name: CPRORA. Install Cerificates to mRoot
+      ansible.builtin.shell: |
+        # export PATH=$PATH:"{{ cspbindir }}"
+        yes o | ./certmgr -install -store mRoot -file /home/{{ cpra_srv_acc }}/{{ cacert }}.cer
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbindir }}"
 ```
 </details>
 
