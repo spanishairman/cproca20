@@ -17,10 +17,11 @@
  
 Описание виртуальных машин находится в [Vagrantfile](vagrant/Vagrantfile)
 
-В данном _Vagrantfile_ приведено описание трёх виртуальных машин:
+В данном _Vagrantfile_ приведено описание четырёх виртуальных машин:
   - _Debian121_ - сервер Центра сертификации;
   - _Debian122_ - сервер Центра регистрации;
-  - _Debian123_ - сервер баз данных соответственно. 
+  - _Debian123_ - сервер баз данных;
+  - _Debian124_ - рабочая станция оператора, соответственно. 
 В качестве _СУБД_ используется _PostgreSQL_, установленная из репозиториев операционной системы. 
 Данный тестовый _Удостоверяющий центр_ разворачивается в ОС - _Debian Linux 12_. В формуляре же в качестве операционной системы указана Astra linux 1.7.5
 
@@ -44,14 +45,23 @@ cprora ansible_host=192.168.121.12 ansible_port=22 ansible_private_key_file=/hom
 [cprodbserver]
 cprodb ansible_host=192.168.121.13 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Debian123/libvirt/private_key
 
+[cprodesktopserver]
+cprodesktop ansible_host=192.168.121.14 ansible_port=22 ansible_private_key_file=/home/max/vagrant/.vagrant/machines/Debian124/libvirt/private_key
+
 [caservers:children]
 cprocaserver
 cproraserver
+
+[cspservers:children]
+cprocaserver
+cproraserver
+cprodesktopserver
 
 [allservers:children]
 cprocaserver
 cproraserver
 cprodbserver
+cprodesktopserver
 ```
 
 </details>
@@ -172,7 +182,6 @@ remote_user = vagrant
 host_key_checking = False
 retry_files_enabled = False
 ```
-
 </details>
 
 ### Копирование файлов установки на управляемые хосты
@@ -184,7 +193,7 @@ retry_files_enabled = False
 ```
 ---
 - name: <<< PLAYBOOK 01 >>> COPY DISTRO | Group of servers "caservers".
-  hosts: caservers
+  hosts: cspservers
   become: false
   tasks:
   - name: COPY.
@@ -195,7 +204,6 @@ retry_files_enabled = False
       group: "{{ dst_user }}"
       mode: '0644'
 ```
-
 </details>
 
 
@@ -208,7 +216,7 @@ retry_files_enabled = False
 ```
 ---
 - name: <<< PLAYBOOK 02 >>> INSTALL CSP | Extract Archive.
-  hosts: caservers
+  hosts: cspservers
   tasks:
     - name: INSTALL CSP. Extract Archive.
       ansible.builtin.shell: |
@@ -220,11 +228,11 @@ retry_files_enabled = False
       tags:
       - extract
 
-- name: <<< PLAYBOOK 02 >>> INSTALL CSP | Install distributives CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma.
-  hosts: caservers
+- name: <<< PLAYBOOK 02 >>> INSTALL CSP | Install distributives CryptoPro CSP. Setup Licenses for CSP. Install Gamma.
+  hosts: cspservers
   become: true
   tasks:
-    - name: INSTALL CSP. Install Software CryptoPro CSP, cprocsp-nginx, lsb-cprocsp-devel, cprocsp-stunnel, cprocsp-pki-cades.
+    - name: INSTALL CSP. Install Software CryptoPro CSP, lsb-cprocsp-devel, cprocsp-pki-cades.
       ansible.builtin.shell: |
         ./install.sh kc1 lsb-cprocsp-devel cprocsp-pki-cades
       args:
@@ -233,11 +241,9 @@ retry_files_enabled = False
       tags:
       - install
 
-    - name: CONFIGURE CSP. Setup Licenses for CSP, OCSP, TSP.
+    - name: CONFIGURE CSP. Setup Licenses for CSP.
       ansible.builtin.shell: |
         sbin/amd64/cpconfig -license -set "{{ liccsp }}"
-        bin/amd64/ocsputil li -s "{{ licocsputils }}"
-        bin/amd64/tsputil li -s "{{ lictsputils }}"
       args:
         executable: /bin/bash
         chdir: "{{ cspbase }}"
@@ -265,15 +271,14 @@ retry_files_enabled = False
       - restart
 
 ```
-
 </details>
 
 Каждому из перечисленных шагов соответствует уникальный __тэг__:
-  - :white_check_mark: extract
-  - :white_check_mark: install
-  - :white_check_mark: license
-  - :white_check_mark: gamma
-  - :white_check_mark: restart
+  - :white_check_mark: extract - создание каталога, в случае его отсутствия, и распаковка дистрибутива в этот каталог;
+  - :white_check_mark: install - запуск скрипта для установки _Криптопро CSP_ с заданными ключами;
+  - :white_check_mark: license - ввод лицензии на использование _Криптопро CSP_;
+  - :white_check_mark: gamma - копирование ранее созданной гаммы и задание прав доступа к ней;
+  - :white_check_mark: restart - перезапуск службы криптопрвайдера.
 
 ### Установка PostgreSQL Server
 Клиентская и серверная часть Postgresql устанавливается из репозиториев Debian. Для этого используем плейбук [03.install-postgres.yml](vagrant/ansible.ca/play/03.install-postgres.yml)
@@ -292,6 +297,11 @@ retry_files_enabled = False
       state: present
       update_cache: false
 
+  - name: INSTALL Libssl1.1.
+    ansible.builtin.apt:
+      deb: "{{ dst_dirinst }}/{{ libssl1 }}"
+      state: present
+
 - name: <<< PLAYBOOK 03 >>> APT. INSTALL POSTGRESQL | Install Server.
   hosts: cprodbserver
   become: true
@@ -301,6 +311,7 @@ retry_files_enabled = False
       name: postgresql,python3-psycopg2,acl
       state: present
       update_cache: false
+
 ```
 
 </details>
@@ -309,6 +320,7 @@ retry_files_enabled = False
   - :white_check_mark: acl
   - :white_check_mark: postgresql-client
   - :white_check_mark: python3-cryptography
+  - :white_check_mark: устаревший пакет __libssl1__ - он требуется только на современных дистрибутивах Linux.
 
 Для сервера __cprodbserver__ же, были установлены:
   - :white_check_mark: acl
@@ -352,6 +364,7 @@ retry_files_enabled = False
     ansible.builtin.service:
       name: postgresql.service
       state: restarted
+
 ```
 
 </details>
@@ -1121,7 +1134,7 @@ retry_files_enabled = False
 ```
 ---
 - name: <<< PLAYBOOK 12 >>> REGISTRATION OF SERVICES | Server cpcaserver, services CryptoPro.Ca.Service, Nats-Streaming-Server
-  hosts: cproca
+  hosts: cprocaserver
   become: true
   tasks:
     - name: REGISTRATION OF SERVICE CryptoPro.Ca.Service. Copy Template
@@ -1150,7 +1163,7 @@ retry_files_enabled = False
 
 
 - name: <<< PLAYBOOK 12 >>> REGISTRATION OF SERVICES | Server cpraserver, services CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
-  hosts: cprora
+  hosts: cproraserver
   become: true
   tasks:
     - name: REGISTRATION OF SERVICE CryptoPro.Ra.Service. Copy Template
@@ -1237,7 +1250,7 @@ WantedBy=multi-user.target
         - { name: nats-streaming-server.service }
 
 - name: <<< PLAYBOOK 13 >>> REGISTRATION OF SERVICES | Server cprora
-  hosts: cprora
+  hosts: cproraserver
   become: true
   tasks:
     - name: Force systemd to reread configs
@@ -1252,7 +1265,6 @@ WantedBy=multi-user.target
       loop:
         - { name: cryptopro.ra.service }
         - { name: cryptopro.ra.web.service }
-
 ```
 </details>
 
@@ -1274,7 +1286,7 @@ WantedBy=multi-user.target
 ```
 ---
 - name: <<< PLAYBOOK 14 >>> CPROCA | Create CA instance. Load Templates
-  hosts: cproca
+  hosts: cprocaserver
   become: true
   become_user: "{{ cpca_srv_acc }}"
   tasks:
