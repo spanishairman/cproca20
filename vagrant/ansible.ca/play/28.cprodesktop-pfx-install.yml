@@ -1,0 +1,25 @@
+---
+- name: <<< PLAYBOOK 28 >>> CPRODesktop | Install a Certificate for Operator
+  hosts: cprodesktopserver
+  become: false
+  tasks:
+    - name: CryptoPro Desktop. Install a Certificates for Operator
+      ansible.builtin.shell: |
+        ./certmgr -install -pfx -store uMy -file "{{ ansible_user_dir }}/{{ item }}" -newpin '' -pin 11111111
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbindir }}"
+      loop:
+        - "{{ crt_opertls }}.pfx"
+        - "{{ crt_opersign }}.pfx"
+
+- name: <<< PLAYBOOK 28 >>> Install rootca certificate on a Desktop.
+  hosts: cprodesktopserver
+  become: false
+  tasks:
+    - name: CPRORA. Install Cerificates to uRoot
+      ansible.builtin.shell: |
+        yes o | ./certmgr -install -store uRoot -file "{{ ansible_user_dir }}/{{ cacert }}.cer"
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbindir }}"

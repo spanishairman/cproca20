@@ -9,6 +9,11 @@
       state: present
       update_cache: false
 
+  - name: INSTALL Libssl1.1.
+    ansible.builtin.apt:
+      deb: "{{ dst_dirinst }}/{{ libssl1 }}"
+      state: present
+
 - name: <<< PLAYBOOK 03 >>> APT. INSTALL POSTGRESQL | Install Server.
   hosts: cprodbserver
   become: true

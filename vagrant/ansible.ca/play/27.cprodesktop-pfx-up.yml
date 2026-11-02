@@ -1,0 +1,13 @@
+---
+- name: <<< PLAYBOOK 27 >>> UP PFXs | Upload keys to Desktop.
+  hosts: cprodesktopserver
+  become: false
+  tasks:
+    - name: UP.
+      ansible.builtin.copy:
+        src: "{{ localdir }}/share/{{ item }}"
+        dest: "{{ ansible_user_dir }}/{{ item }}"
+      loop:
+        - "{{ cacert }}.cer"
+        - "{{ crt_opertls }}.pfx"
+        - "{{ crt_opersign }}.pfx"

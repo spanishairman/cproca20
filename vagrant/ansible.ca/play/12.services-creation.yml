@@ -29,7 +29,7 @@
 
 
 - name: <<< PLAYBOOK 12 >>> REGISTRATION OF SERVICES | Server cpraserver, services CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
-  hosts: cprora
+  hosts: cproraserver
   become: true
   tasks:
     - name: REGISTRATION OF SERVICE CryptoPro.Ra.Service. Copy Template

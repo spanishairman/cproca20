@@ -1,6 +1,6 @@
 ---
 - name: <<< PLAYBOOK 02 >>> INSTALL CSP | Extract Archive.
-  hosts: caservers
+  hosts: cspservers
   tasks:
     - name: INSTALL CSP. Extract Archive.
       ansible.builtin.shell: |
@@ -12,11 +12,11 @@
       tags:
       - extract
 
-- name: <<< PLAYBOOK 02 >>> INSTALL CSP | Install distributives CryptoPro CSP, Stunnel, Nginx, PKI Cades. Setup Licenses for CSP, OCSP, TSP. Install Gamma.
-  hosts: caservers
+- name: <<< PLAYBOOK 02 >>> INSTALL CSP | Install distributives CryptoPro CSP. Setup Licenses for CSP. Install Gamma.
+  hosts: cspservers
   become: true
   tasks:
-    - name: INSTALL CSP. Install Software CryptoPro CSP, cprocsp-nginx, lsb-cprocsp-devel, cprocsp-stunnel, cprocsp-pki-cades.
+    - name: INSTALL CSP. Install Software CryptoPro CSP, lsb-cprocsp-devel, cprocsp-pki-cades.
       ansible.builtin.shell: |
         ./install.sh kc1 lsb-cprocsp-devel cprocsp-pki-cades
       args:
@@ -25,11 +25,9 @@
       tags:
       - install
 
-    - name: CONFIGURE CSP. Setup Licenses for CSP, OCSP, TSP.
+    - name: CONFIGURE CSP. Setup Licenses for CSP.
       ansible.builtin.shell: |
         sbin/amd64/cpconfig -license -set "{{ liccsp }}"
-        bin/amd64/ocsputil li -s "{{ licocsputils }}"
-        bin/amd64/tsputil li -s "{{ lictsputils }}"
       args:
         executable: /bin/bash
         chdir: "{{ cspbase }}"

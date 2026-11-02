@@ -1,6 +1,6 @@
 ---
 - name: <<< PLAYBOOK 19 >>> FETCH REQUESTS | Download requests for certificates from RA.
-  hosts: cprora
+  hosts: cproraserver
   become: true
   become_user: "{{ cpra_srv_acc }}"
   tasks:

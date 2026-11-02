@@ -1,0 +1,14 @@
+---
+- name: <<< PLAYBOOK 26 >>> FETCH PFXs | Download keys from RA.
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: FETCH.
+      ansible.builtin.fetch:
+        src: "{{ ansible_user_dir }}/{{ item }}.pfx"
+        dest: "{{ localdir }}/share/"
+        flat: 'true'
+      loop:
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"

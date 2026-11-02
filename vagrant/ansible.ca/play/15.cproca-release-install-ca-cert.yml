@@ -1,6 +1,6 @@
 ---
 - name: <<< PLAYBOOK 15 >>> CPROCA | Release, Install, Add a new CA certificate
-  hosts: cproca
+  hosts: cprocaserver
   become: true
   become_user: "{{ cpca_srv_acc }}"
   tasks:

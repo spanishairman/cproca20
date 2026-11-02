@@ -35,6 +35,9 @@ Vagrant.configure("2") do |config|
       echo '192.168.1.1 cproca.local cproca' >> /etc/hosts
       echo '192.168.1.2 cprora.local cprora' >> /etc/hosts
       echo '192.168.1.3 cprodb.local cprodb' >> /etc/hosts
+      echo '192.168.1.4 cprodesktop.local cprodesktop' >> /etc/hosts
+      sed -i 's/ftp.ru.debian.org/ftp.psn.ru/' /etc/apt/sources.list
+      apt update
       SHELL
   end
   config.vm.define "Debian122" do |debian122|
@@ -66,6 +69,9 @@ Vagrant.configure("2") do |config|
       echo '192.168.1.1 cproca.local cproca' >> /etc/hosts
       echo '192.168.1.2 cprora.local cprora' >> /etc/hosts
       echo '192.168.1.3 cprodb.local cprodb' >> /etc/hosts
+      echo '192.168.1.4 cprodesktop.local cprodesktop' >> /etc/hosts
+      sed -i 's/ftp.ru.debian.org/ftp.psn.ru/' /etc/apt/sources.list
+      apt update
       SHELL
   end
   config.vm.define "Debian123" do |debian123|
@@ -97,6 +103,45 @@ Vagrant.configure("2") do |config|
       echo '192.168.1.1 cproca.local cproca' >> /etc/hosts
       echo '192.168.1.2 cprora.local cprora' >> /etc/hosts
       echo '192.168.1.3 cprodb.local cprodb' >> /etc/hosts
+      echo '192.168.1.4 cprodesktop.local cprodesktop' >> /etc/hosts
+      sed -i 's/ftp.ru.debian.org/ftp.psn.ru/' /etc/apt/sources.list
+      apt update
+      SHELL
+  end
+  config.vm.define "Debian124" do |debian124|
+  debian124.vm.box = "/home/max/vagrant/images/debian12"
+  debian124.vm.network :private_network,
+       :type => 'ip',
+       :libvirt__forward_mode => 'veryisolated',
+       :libvirt__dhcp_enabled => false,
+       :ip => '192.168.1.4',
+       :libvirt__netmask => '255.255.255.240',
+       :libvirt__network_name => 'vagrant-libvirt-inet1',
+       :libvirt__always_destroy => false
+  debian124.vm.provider "libvirt" do |lvirt|
+      lvirt.memory = "2048"
+      lvirt.cpus = "2"
+      lvirt.title = "Debian124"
+      lvirt.description = "Виртуальная машина на базе дистрибутива Debian Linux 12. Desktop"
+      lvirt.management_network_name = "vagrant-libvirt-mgmt"
+      lvirt.management_network_address = "192.168.121.0/24"
+      lvirt.management_network_keep = "true"
+      lvirt.management_network_mac = "52:54:00:27:28:83"
+  end
+  debian124.vm.provision "shell", inline: <<-SHELL
+      brd='*******'
+      echo "$brd"
+      echo 'HELLO!'
+      echo "$brd"
+      hostnamectl set-hostname cprodesktop
+      echo '192.168.1.1 cproca.local cproca' >> /etc/hosts
+      echo '192.168.1.2 cprora.local cprora' >> /etc/hosts
+      echo '192.168.1.3 cprodb.local cprodb' >> /etc/hosts
+      echo '192.168.1.4 cprodesktop.local cprodesktop' >> /etc/hosts
+      sed -i 's/ftp.ru.debian.org/ftp.psn.ru/' /etc/apt/sources.list
+      lvextend -r -l+80%FREE /dev/mapper/debian12--vg-var
+      lvextend -r -L +1G /dev/mapper/debian12--vg-root
+      apt update
       SHELL
   end
 end

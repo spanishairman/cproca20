@@ -1,6 +1,6 @@
 ---
 - name: <<< PLAYBOOK 01 >>> COPY DISTRO | Group of servers "caservers".
-  hosts: caservers
+  hosts: cspservers
   become: false
   tasks:
   - name: COPY.
