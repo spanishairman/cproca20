@@ -1591,7 +1591,7 @@ WantedBy=multi-user.target
   - :white_check_mark: оператора Центра регистрации для создания защищённого подключения;
   - :white_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов.
 
-### Выпуск сертификатов безопасности на основе всех ранее созданных запросов
+### Выпуск сертификатов на основе всех ранее созданных запросов
 
 После того как все запросы на выпуск сертификатов были размещены в домашней директори учетной записи _cpca-srv_ Центра сертификации, можно выпустить целевые сертификаты. Для этого используем плейбук 
 [play/21.cproca-certs-issue.yml](vagrant/ansible.ca/play/21.cproca-certs-issue.yml):
@@ -1641,7 +1641,7 @@ WantedBy=multi-user.target
 
 Теперь сертификаты, котрые были выпущены для _Центра регистрации_, необходио будет скопировать обратно на сервер ЦР.
 
-### Копирование выпущенных сертификатов безопасности с ЦС на ЦР
+### Копирование выпущенных сертификатов с ЦС на ЦР
 
 Для передачи сертификатов с _Центра Сертификации_ на _Центр Регистрации_ задействуется управляющая машина. Таким образом, файлы сертификатов сначала скачиваются 
 на хост управления с _Центра Сертификации_, затем загружаются с него на _Центр Регистрации_.
@@ -1698,7 +1698,7 @@ WantedBy=multi-user.target
 ```
 </details>
 
-### Установка сертификатов безопасности на серверах Центра Сертификации и Центра Регистрации
+### Установка сертификатов на серверах Центра Сертификации и Центра Регистрации
 
 Установка сертификатов в хранилище с привязкой к закрытому ключу для учетных записей, с правами которых работают службы. 
 На Центре сертификации - плейбук [play/24.cproca-certs-install.yml](vagrant/ansible.ca/play/24.cproca-certs-install.yml):
@@ -1798,3 +1798,88 @@ WantedBy=multi-user.target
   - :white_check_mark: веб сервера Центра регистрации - для установки в локальное хранилище пользователя _nginx_;
   - :white_check_mark: оператора Центра регистрации (для создания защищённого подключения) для передачи и последующей установки на рабочую станцию оператора;
   - :white_check_mark: оператора Центра регистрации (для подписания запросов на выпуск сертификатов) для передачи и последующей установки на рабочую станцию оператора;
+
+### Копирование и установка сертификатов оператора на его рабочую станцию
+
+После того, как сертификаты оператора были экспортированиы из хранилища в файлы _pfx_, их необходимо скопировать на рабочую станцию и там установить в локальное хранилище учетной записи оператора,
+в данном случае это пользователь _Vagrant_.
+
+Плейбук [play/26.cprora-pfxs-fetch.yml](vagrant/ansible.ca/play/26.cprora-pfxs-fetch.yml) - копирует файлы _pfx_ с _Центра регистрации_ на управляющую машину в каталог _share_:
+
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 26 >>> FETCH PFXs | Download keys from RA.
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  tasks:
+    - name: FETCH.
+      ansible.builtin.fetch:
+        src: "{{ ansible_user_dir }}/{{ item }}.pfx"
+        dest: "{{ localdir }}/share/"
+        flat: 'true'
+      loop:
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"
+```
+</details>
+
+Плейбук [play/27.cprodesktop-pfx-up.yml](vagrant/ansible.ca/play/27.cprodesktop-pfx-up.yml) - копирует файлы _pfx_ и корневой сертификат Центра сертификации с каталога _share_ управляющей машины на станцию оператора 
+в домашнюю директорию пользователя _Vagrant_:
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 27 >>> UP PFXs | Upload keys to Desktop.
+  hosts: cprodesktopserver
+  become: false
+  tasks:
+    - name: UP.
+      ansible.builtin.copy:
+        src: "{{ localdir }}/share/{{ item }}"
+        dest: "{{ ansible_user_dir }}/{{ item }}"
+      loop:
+        - "{{ cacert }}.cer"
+        - "{{ crt_opertls }}.pfx"
+        - "{{ crt_opersign }}.pfx"
+```
+</details>
+
+Плейбук [play/28.cprodesktop-pfx-install.yml](vagrant/ansible.ca/play/28.cprodesktop-pfx-install.yml) - устанавливает сертификаты с привязкой к закрытому ключу в хранилище пользователя __uMy__, 
+а также корневой сертифкат в хранилище __uRoot__:
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 28 >>> CPRODesktop | Install a Certificate for Operator
+  hosts: cprodesktopserver
+  become: false
+  tasks:
+    - name: CryptoPro Desktop. Install a Certificates for Operator
+      ansible.builtin.shell: |
+        ./certmgr -install -pfx -store uMy -file "{{ ansible_user_dir }}/{{ item }}" -newpin '' -pin 11111111
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbindir }}"
+      loop:
+        - "{{ crt_opertls }}.pfx"
+        - "{{ crt_opersign }}.pfx"
+
+- name: <<< PLAYBOOK 28 >>> Install rootca certificate on a Desktop.
+  hosts: cprodesktopserver
+  become: false
+  tasks:
+    - name: CPRORA. Install Cerificates to uRoot
+      ansible.builtin.shell: |
+        yes o | ./certmgr -install -store uRoot -file "{{ ansible_user_dir }}/{{ cacert }}.cer"
+      args:
+        executable: /bin/bash
+        chdir: "{{ cspbindir }}"
+
+```
+</details>
