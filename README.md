@@ -1322,7 +1322,7 @@ WantedBy=multi-user.target
 ```
 ---
 - name: <<< PLAYBOOK 15 >>> CPROCA | Release, Install, Add a new CA certificate
-  hosts: cproca
+  hosts: cprocaserver
   become: true
   become_user: "{{ cpca_srv_acc }}"
   tasks:
@@ -1372,7 +1372,7 @@ WantedBy=multi-user.target
 ```
 ---
 - name: <<< PLAYBOOK 16 >>> CPROCA | Configure CA and CA Shedule
-  hosts: cproca
+  hosts: cprocaserver
   become: true
   become_user: "{{ cpca_srv_acc }}"
   tasks:
@@ -1406,7 +1406,7 @@ WantedBy=multi-user.target
         chdir: "{{ pkicabase }}"
 
 - name: <<< PLAYBOOK 16 >>> CPROCA | Restart CA
-  hosts: cproca
+  hosts: cprocaserver
   become: true
   tasks:
     - name: CryptoPro CA. Restart service.
@@ -1538,7 +1538,7 @@ WantedBy=multi-user.target
 ```
 ---
 - name: <<< PLAYBOOK 19 >>> FETCH REQUESTS | Download requests for certificates from RA.
-  hosts: cprora
+  hosts: cproraserver
   become: true
   become_user: "{{ cpra_srv_acc }}"
   tasks:
@@ -1564,7 +1564,7 @@ WantedBy=multi-user.target
 ```
 ---
 - name: <<< PLAYBOOK 20 >>> UP REQUESTS | Upload requests for certificates to CA.
-  hosts: cproca
+  hosts: cprocaserver
   become: true
   become_user: "{{ cpca_srv_acc }}"
   tasks:
@@ -1652,7 +1652,7 @@ WantedBy=multi-user.target
 ```
 ---
 - name: <<< PLAYBOOK 22 >>> FETCH CERTS | Download certificates from CA.
-  hosts: cproca
+  hosts: cprocaserver
   become: true
   become_user: "{{ cpca_srv_acc }}"
   tasks:
@@ -1679,7 +1679,7 @@ WantedBy=multi-user.target
 ```
 ---
 - name: <<< PLAYBOOK 23 >>> UP CERIFICATES | Upload certificates to RA.
-  hosts: cprora
+  hosts: cproraserver
   become: true
   become_user: "{{ cpra_srv_acc }}"
   tasks:
@@ -1708,7 +1708,7 @@ WantedBy=multi-user.target
 ```
 ---
 - name: <<< PLAYBOOK 24 >>> INSTALL | Install certificates on a Certifications Authority.
-  hosts: cproca
+  hosts: cprocaserver
   become: true
   become_user: "{{ cpca_srv_acc }}"
   tasks:
@@ -1733,7 +1733,7 @@ WantedBy=multi-user.target
 ```
 ---
 - name: <<< PLAYBOOK 25 >>> INSTALL | Install certificates on a Registrations Authority.
-  hosts: cprora
+  hosts: cproraserver
   become: true
   become_user: "{{ cpra_srv_acc }}"
   tasks:
@@ -1751,17 +1751,21 @@ WantedBy=multi-user.target
         - "{{ crt_opertls }}"
         - "{{ crt_opersign }}"
 
-    - name: CPRORA. Export Cerificate "ra_srv" to "ra_srv.pfx"
+    - name: CPRORA. Export Cerificates to pfx
       ansible.builtin.shell: |
         export PATH=$PATH:{{ cspbindir }}
-        idcprorasrv=$(certmgr -list -file {{ ansible_user_dir }}/{{ crt_ra_srv }}.cer | grep "SHA1" | awk '{print $4}')
-        echo "$idcprorasrv" && certmgr -export -pfx -pin 11111111 -thumbprint $idcprorasrv -dest {{ ansible_user_dir }}/{{ crt_ra_srv }}.pfx
+        id=$(certmgr -list -file {{ ansible_user_dir }}/{{ item }}.cer | grep "SHA1" | awk '{print $4}')
+        certmgr -export -pfx -pin 11111111 -thumbprint $id -dest {{ ansible_user_dir }}/{{ item }}.pfx
       args:
         executable: /bin/bash
+      loop:
+        - "{{ crt_ra_srv }}"
+        - "{{ crt_opertls }}"
+        - "{{ crt_opersign }}"
       tags: export
 
 - name: <<< PLAYBOOK 25 >>> INSTALL | Install rootca certificate on a Registrations Authority.
-  hosts: cprora
+  hosts: cproraserver
   become: true
   tasks:
     - name: CPRORA. Install Cerificates to mRoot
@@ -1771,6 +1775,26 @@ WantedBy=multi-user.target
       args:
         executable: /bin/bash
         chdir: "{{ cspbindir }}"
+
 ```
 </details>
 
+Здесь мы установили сертификаты на:
+  - :white_check_mark: Центре сертификации:
+    - :heavy_check_mark: клиентской части службы очередей _Nats_;
+    - :heavy_check_mark: серверной части службы очередей _Nats_;
+    - :heavy_check_mark: утилиты _pkica_ Центра сертификации для подключения к _Nats_;
+    - :heavy_check_mark: службы Центра сертификации для подключения к _Nats_;
+  - :white_check_mark: Центре регистрации:
+    - :heavy_check_mark: веб сервера Центра регистрации;
+    - :heavy_check_mark: службы Центра регистрации для подключения к _Nats_;
+    - :heavy_check_mark: веб службы Центра регистрации для подключения к _Nats_;
+    - :heavy_check_mark: утилиты _pkica_ Центра регистрации для подключения к _Nats_;
+    - :heavy_check_mark: оператора Центра регистрации для создания защищённого подключения;
+    - :heavy_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов.
+    - :heavy_check_mark: корневой сертификат Центра сертификации
+
+Также, на Центре регистрации, мы экспортировали сертификаты в формате pfx:
+  - :white_check_mark: веб сервера Центра регистрации - для установки в локальное хранилище пользователя _nginx_;
+  - :white_check_mark: оператора Центра регистрации (для создания защищённого подключения) для передачи и последующей установки на рабочую станцию оператора;
+  - :white_check_mark: оператора Центра регистрации (для подписания запросов на выпуск сертификатов) для передачи и последующей установки на рабочую станцию оператора;
