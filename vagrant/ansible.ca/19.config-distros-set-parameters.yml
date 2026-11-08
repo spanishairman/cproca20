@@ -1,0 +1,13 @@
+---
+- name: <<< PLAYBOOK 19 >>> CPROCA | Config Pkica and Ca for TLS-connections to Nats.
+  hosts: cprocaserver
+  become: true
+  roles:
+    - 19.config-distros-set-parameters-nats
+    - 19.config-distros-set-parameters-ca
+
+- name: <<< PLAYBOOK 19 >>> CPRORA | Config Pkica and Ra for TLS-connections to Nats.
+  hosts: cproraserver
+  become: true
+  roles:
+    - 19.config-distros-set-parameters-ra

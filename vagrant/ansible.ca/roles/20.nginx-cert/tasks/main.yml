@@ -1,0 +1,28 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/20.nginx-cert
+- name: Set ACL privileges for CpNginx, on /home/"{{ cpra_srv_acc }}" dir
+  ansible.posix.acl:
+    path: /home/{{ cpra_srv_acc }}
+    entity: nginx
+    etype: user
+    permissions: rx
+    default: false
+    recursive: false
+    state: present
+  become: true
+
+- name: Install a Certificates for Nginx Web Server
+  ansible.builtin.shell: |
+    sudo -u nginx ./certmgr -install -pfx -store uMy -file /home/{{ cpra_srv_acc }}/{{ crt_ra_srv }}.pfx -newpin '' -pin 11111111
+  args:
+    executable: /bin/bash
+    chdir: "{{ cspbindir }}"
+
+- name: UnSet ACL privileges for CpNginx, on /home/"{{ cpra_srv_acc }}" dir
+  ansible.posix.acl:
+    path: /home/{{ cpra_srv_acc }}
+    entity: nginx
+    etype: user
+    state: absent
+  become: true

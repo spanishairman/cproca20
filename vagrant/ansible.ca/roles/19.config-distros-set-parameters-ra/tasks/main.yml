@@ -1,0 +1,17 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/19.config-distros-set-parameters-ra
+- name: CryptoPro RA. Edit Pkica and Ra for TLS-connections to Nats
+  ansible.builtin.shell: |
+    export PATH=$PATH:{{ cspbindir }}
+    ttold=$(grep Thumbprint {{ item.base }}/appsettings.json | tail -n 1 | awk '{print $2}' | awk -F "," '{print $1}')
+    ttnew=$(certmgr -list -file /home/{{ cpra_srv_acc }}/{{ item.cert }} | grep SHA1 | awk '{print $4}')
+    sed -i "s/\"Secure\": false/\"Secure\": true/" {{ item.base }}/appsettings.json
+    sed -i "s/$ttold/\"$ttnew\"/" {{ item.base }}/appsettings.json
+  args:
+    executable: /bin/bash
+  loop:
+    - { base: "{{ rasrvbase }}", cert: "{{ crt_ra_clnt }}.cer" }
+    - { base: "{{ rawebbase }}", cert: "{{ crt_ra_webclnt }}.cer" }
+    - { base: "{{ pkicabase }}", cert: "{{ crt_ra_pkicaclnt }}.cer" }
+  notify: Restart services

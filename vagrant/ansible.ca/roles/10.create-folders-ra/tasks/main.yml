@@ -1,0 +1,12 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/10.create-folders-ra
+- name: CREATE FOLDERS SET OWNS. Create a crl, crt, log store dirs for ra-server
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.ownname }}"
+  loop:
+    - { path: "{{ cdpstore }}", ownname: "{{ cpra_srv_acc }}" }
+    - { path: "{{ aiastore }}", ownname: "{{ cpra_srv_acc }}" }
+    - { path: "{{ calog }}", ownname: "{{ cpra_srv_acc }}" }

@@ -1,0 +1,26 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/07.raservice-set-perms
+- name: CryptoPro RA. Chmod {{ cabase }}
+  ansible.builtin.file:
+    path: "{{ cabase }}"
+    group: "{{ cpra_srv_acc }}"
+    mode: o-rwx
+    recurse: true
+- name: CryptoPro RA. Set ACL privileges for CryptoPro.Ra.Service, CryptoPro.Ra.Web
+  ansible.posix.acl:
+    path: "{{ item.path }}"
+    entity: "{{ item.entity }}"
+    etype: "{{ item.etype }}"
+    permissions: "{{ item.permissions }}"
+    default: "{{ item.default }}"
+    recursive: "{{ item.recursive }}"
+    state: "{{ item.state }}"
+  loop:
+    - { path: "{{ rasrvbase }}/{{ rasrvsbin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+    - { path: "{{ rawebbase }}/{{ rawebsbin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+    - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+    - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ admin_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
+- name: CryptoPro RA. Install Nginx
+  ansible.builtin.apt:
+    deb: "{{ nginxbase }}/{{ nginxdistro }}"

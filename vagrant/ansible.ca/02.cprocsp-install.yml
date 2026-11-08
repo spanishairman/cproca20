@@ -1,0 +1,5 @@
+---
+- name: <<< PLAYBOOK 02 >>> INSTALL CSP | Extract Archive. Install distributives CryptoPro CSP. Setup Licenses for CSP. Install Gamma.
+  hosts: cspservers
+  roles:
+    - 02.cprocsp-install

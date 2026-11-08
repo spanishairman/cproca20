@@ -1,0 +1,11 @@
+---
+- name: <<< PLAYBOOK 20 >>> CPRORA | Install cert for Webserver
+  hosts: cproraserver
+  roles:
+    - 20.nginx-cert
+
+- name: <<< PLAYBOOK 20 >>> CPRORA | Create nginx.conf
+  hosts: cproraserver
+  become: true
+  roles:
+    - 20.nginx-config

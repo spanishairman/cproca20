@@ -1,0 +1,28 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/06.system-raservice-user-create
+- name: CryptoPro RA. Add the user "{{ cpra_srv_acc }}" with a bash shell
+  ansible.builtin.user:
+    name: "{{ cpra_srv_acc }}"
+    password: '!'
+    comment: CryptoPro RA Service
+    shell: /bin/bash
+    create_home: yes
+    groups: crl-writers
+    append: yes
+
+- name: CryptoPro RA. Create .pgpass file for "{{ cpra_srv_acc }}"
+  ansible.builtin.shell: |
+    echo "# host:port:database:user:password" > /home/"{{ cpra_srv_acc }}"/.pgpass
+    echo "{{ pg_address }}:5432:*:{{ cpra_dbadmin }}:{{ cpra_dbpass }}" >> /home/"{{ cpra_srv_acc }}"/.pgpass
+    echo "{{ pg_address }}:5432:*:{{ cpca_dbadmin }}:{{ cpca_dbpass }}" >> /home/"{{ cpra_srv_acc }}"/.pgpass
+  args:
+    executable: /bin/bash
+
+- name: Cprora. Chmod .pgpass
+  ansible.builtin.file:
+    path: "/home/{{ cpra_srv_acc }}/.pgpass"
+    owner: "{{ cpra_srv_acc }}"
+    group: "{{ cpra_srv_acc }}"
+    mode: '0600'
+

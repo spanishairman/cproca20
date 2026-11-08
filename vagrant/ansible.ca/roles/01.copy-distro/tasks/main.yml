@@ -1,0 +1,10 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/01.copy-distro
+- name: COPY.
+  ansible.builtin.copy:
+    src: files/
+    dest: "{{ dst_dirinst }}"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: '0644'

@@ -1,0 +1,12 @@
+---
+- name: <<< PLAYBOOK 03 >>> APT. INSTALL POSTGRESQL | Install Client.
+  hosts: caservers
+  become: true
+  roles:
+    - 03.pgsql-client-install
+
+- name: <<< PLAYBOOK 03 >>> APT. INSTALL POSTGRESQL | Install Server.
+  hosts: cprodbserver
+  become: true
+  roles:
+    - 03.pgsql-server-install

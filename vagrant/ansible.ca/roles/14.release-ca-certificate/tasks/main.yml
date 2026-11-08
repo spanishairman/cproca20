@@ -1,0 +1,25 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/14.release-ca-certificate
+- name: CPROCA. Release a new CA certificate
+  ansible.builtin.shell: |
+    ./"{{ pkicabin }}" ca new-root-cert --out-file ~/{{ cacert }}.cer --key-index 0 --subject "CN={{ caname }};O={{ orgname }};C=RU" --container-name {{ cacont }} --no-pin --silent
+  args:
+    executable: /bin/bash
+    chdir: "{{ pkicabase }}"
+
+- name: CPROCA. Install CA certificates to storages
+  ansible.builtin.shell: |
+    ./certmgr -install -store uMy -file ~/"{{ cacert }}.cer" -provtype 80 -container "{{ cacont }}" -at_signature
+    yes o | ./certmgr -install -store uRoot -file ~/"{{ cacert }}.cer"
+  args:
+    executable: /bin/bash
+    chdir: "{{ cspbindir }}"
+
+- name: CPROCA. Add CA key
+  ansible.builtin.shell: |
+    export PATH=$PATH:"{{ cspbindir }}"
+    ./"{{ pkicabin }}" ca signing-key add --name "{{ caname }}" --thumbprint $(certmgr -list -file ~/"{{ cacert }}.cer" | grep SHA1 | awk '{print $4}') --store-name My --store-location CurrentUser --no-pin
+  args:
+    executable: /bin/bash
+    chdir: "{{ pkicabase }}"

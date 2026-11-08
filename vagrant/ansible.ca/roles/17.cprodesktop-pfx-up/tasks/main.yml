@@ -1,0 +1,12 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/17.cprodesktop-pfx-up
+- name: UP
+  ansible.builtin.copy:
+    src: "{{ localdir }}/share/{{ item }}"
+    dest: "{{ ansible_user_dir }}/{{ item }}"
+  loop:
+    - "{{ cacert }}.cer"
+    - "{{ crt_opertls }}.pfx"
+    - "{{ crt_opersign }}.pfx"
+

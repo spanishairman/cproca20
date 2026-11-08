@@ -1,0 +1,8 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/03.pgsql-server-install
+- name: INSTALL POSTGRESQL. Install Server.
+  ansible.builtin.apt:
+    name: postgresql,python3-psycopg2,acl
+    state: present
+    update_cache: false

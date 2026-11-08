@@ -1,0 +1,56 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/16.cprora-certs-up
+- name: Install Cerificates to mRoot
+  ansible.builtin.shell: |
+    # export PATH=$PATH:"{{ cspbindir }}"
+    yes o | ./certmgr -install -store mRoot -file /home/{{ cpra_srv_acc }}/{{ cacert }}.cer
+  args:
+    executable: /bin/bash
+    chdir: "{{ cspbindir }}"
+  become: true
+  listen: "certificates"
+
+- name: Install Cerificates to uMy
+  ansible.builtin.shell: |
+    ./{{ cryptcpbin }} -instcert -from_request /home/{{ cpra_srv_acc }}/{{ item }}.cer
+  args:
+    executable: /bin/bash
+    chdir: "{{ cspbindir }}"
+  loop:
+    - "{{ crt_ra_srv }}"
+    - "{{ crt_ra_clnt }}"
+    - "{{ crt_ra_webclnt }}"
+    - "{{ crt_ra_pkicaclnt }}"
+    - "{{ crt_opertls }}"
+    - "{{ crt_opersign }}"
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  listen: "certificates"
+
+- name: Export Cerificates to pfx
+  ansible.builtin.shell: |
+    export PATH=$PATH:{{ cspbindir }}
+    id=$(certmgr -list -file /home/{{ cpra_srv_acc }}/{{ item }}.cer | grep "SHA1" | awk '{print $4}')
+    certmgr -export -pfx -pin 11111111 -thumbprint $id -dest /home/{{ cpra_srv_acc }}/{{ item }}.pfx
+  args:
+    executable: /bin/bash
+  loop:
+    - "{{ crt_ra_srv }}"
+    - "{{ crt_opertls }}"
+    - "{{ crt_opersign }}"
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  listen: "certificates"
+
+- name: FETCH.
+  ansible.builtin.fetch:
+    src: "/home/{{ cpra_srv_acc }}/{{ item }}.pfx"
+    dest: "{{ localdir }}/share/"
+    flat: 'true'
+  loop:
+    - "{{ crt_opertls }}"
+    - "{{ crt_opersign }}"
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  listen: "certificates"

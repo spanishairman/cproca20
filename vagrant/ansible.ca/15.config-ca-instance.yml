@@ -1,0 +1,5 @@
+---
+- name: <<< PLAYBOOK 15 >>> CPROCA | Configure CA and CA Shedule
+  hosts: cprocaserver
+  roles:
+    - 15.config-ca-instance

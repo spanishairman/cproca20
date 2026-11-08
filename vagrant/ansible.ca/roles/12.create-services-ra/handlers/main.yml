@@ -1,0 +1,17 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/12.create-services-ra
+- name: Force systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  listen: "services registration"
+
+- name: Enable and start services
+  ansible.builtin.service:
+    name: "{{ item.name }}"
+    enabled: true
+    state: started
+  loop:
+    - { name: cryptopro.ra.service }
+    - { name: cryptopro.ra.web.service }
+  listen: "services registration"

@@ -1,0 +1,9 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/18.release-crl
+- name: CryptoPro CA. Issue a CRL
+  ansible.builtin.shell: |
+    ./"{{ pkicabin }}" ca crl issue --name "{{ caname }}" --output-folder {{ cdpstore }} --force
+  args:
+    executable: /bin/bash
+    chdir: "{{ pkicabase }}"

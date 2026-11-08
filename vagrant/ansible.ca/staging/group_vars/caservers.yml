@@ -1,0 +1,79 @@
+# --- Global vars ---
+allow_world_readable_tmpfiles: true
+src_dirinst: /home/max/vagrant/ansible.ca/files
+dst_dirinst: /home/vagrant/ansible.ca/files
+dst_user: vagrant
+localdir: /home/max/vagrant/ansible.ca
+# --- CryptoPro CSP ---
+liccsp: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+licocsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+lictsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+csp_distro: linux-amd64_deb.tgz
+dircsp: csp50r2
+cspbase: /opt/cprocsp/
+cspbindir: /opt/cprocsp/bin/amd64/
+cspsbindir: /opt/cprocsp/sbin/amd64/
+# --- PostgreSQL ---
+cpca_dbadmin: cpcadbadmin
+cpra_dbadmin: cpradbadmin
+cpca_db: cpcadb
+cpra_db: cpradb
+certreg_db: CertRegistry
+# --- CryptoPro CA/RA ---
+caname: "Тестовый Удостоверяющий Центр АО GAMMA-TRADE"
+company: АО \\"GAMMA-TRADE\\"
+licca: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+licra: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+admin_acc: cpca-admin
+admin_acc_pass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          31393233363564356530363532313235323262663737323664376233666630353737623766366232
+          3464636462653836663134353663303561326335356463370a343963316666356536613334633532
+          66326565363862363762393361386166363132303535343763393532663261623732653534373563
+          3830303663623331610a346664393233356431316462303762336564356430363536373634326364
+          6537
+mstore_ca: /var/opt/cprocsp/users/stores/ca.sto
+cpca_srv_acc: cpca-srv
+cpra_srv_acc: cpra-srv
+cabase: /opt/cpca
+cadistro: ca-linux-x64-1.63.0.32.zip
+calog: /var/log/cpca
+cacert: caroot
+cacont: cacont
+casrvbase: /opt/cpca/CryptoPro.Ca.Service
+rasrvbase: /opt/cpca/CryptoPro.Ra.Service
+rawebbase: /opt/cpca/CryptoPro.Ra.Web
+rawebuibase: /opt/cpca/CryptoPro.Ra.Web.Ui
+pkicabase: /opt/cpca/pkica
+casrvsbin: CryptoPro.Ca.Service
+rasrvsbin: CryptoPro.Ra.Service
+rawebsbin: CryptoPro.Ra.Web
+pkicabin: pkica
+natsbase: /opt/cpca/nats-streaming
+natslib: /var/lib/nats-streaming
+natssbin: nats-streaming-server
+nginxbase: /opt/cpca/nginx/
+nginxdistro: nginx-gost-1.18.0_amd64.deb
+ca_address: 192.168.1.1
+ca_hostname: cproca
+ra_address: 192.168.1.2
+ra_hostname: cprora
+pg_address: 192.168.1.3
+pg_hostname: cprodb
+ca_domain: local
+aiastore: /var/lib/cpca/aia
+cdpstore: /var/lib/cpca/cdp
+# --- Certificate and Templates ---
+tpl_tlssrv: "1.2.643.2.2.46.0.3"
+tpl_tlsclnt: "1.2.643.2.2.46.0.6"
+tpl_oper: "1.2.643.2.2.46.0.8"
+crt_ra_srv: rasrv
+crt_ra_clnt: raclnt
+crt_ra_webclnt: webclnt
+crt_ra_pkicaclnt: pkiraclnt
+crt_ca_natsclnt: natsclnt
+crt_ca_natssrv: natssrv
+crt_ca_caclnt: caclnt
+crt_ca_pkicaclnt: pkicaclnt
+crt_opertls: opertls
+crt_opersign: opersign

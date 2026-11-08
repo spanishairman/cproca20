@@ -1,0 +1,12 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/10.create-folders-ca
+- name: CREATE FOLDERS SET OWNS. Create a messages, certificates store dirs for nats-streaming-server, log store dir for ca-server
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.ownname }}"
+  loop:
+    - { path: "{{ natslib }}/pkica-store", ownname: "{{ cpca_srv_acc }}" }
+    - { path: "{{ natsbase }}/ssl", ownname: "{{ cpca_srv_acc }}" }
+    - { path: "{{ calog }}", ownname: "{{ cpca_srv_acc }}" }

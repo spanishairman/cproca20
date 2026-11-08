@@ -1,0 +1,8 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/02.cprocsp-install
+- name: Restart Cprocsp
+  ansible.builtin.service:
+    name: cprocsp.service
+    state: restarted
+  become: true

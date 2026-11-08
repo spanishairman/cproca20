@@ -1,0 +1,12 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/11.create-dbs-ca
+- name: CryptoPro CA. Create databases for CA service
+  ansible.builtin.shell: |
+    yes | ./"{{ pkicabin }}" {{ item.db }} db new
+  args:
+    executable: /bin/bash
+    chdir: "{{ pkicabase }}"
+  loop:
+    - { db: ca }
+    - { db: cert-registry }

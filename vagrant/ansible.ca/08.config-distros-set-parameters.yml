@@ -1,0 +1,19 @@
+---
+- name: <<< PLAYBOOK 08.1 >>> CPROCA AND CPRORA | Set parameters for PKICA appsettings.json
+  hosts: caservers
+  become: true
+  roles:
+    - 08.config-distros-set-parameters-pkica
+
+- name: <<< PLAYBOOK 08.2 >>> CPROCA | Set parameters for CA appsettings.json
+  hosts: cprocaserver
+  become: true
+  roles:
+    - 08.config-distros-set-parameters-ca
+
+- name: <<< PLAYBOOK 08.3 >>> CPRORA | Set parameters for RA and RAWEB appsettings.json
+  hosts: cproraserver
+  become: true
+  roles:
+    - 08.config-distros-set-parameters-ra
+    - 08.config-distros-set-parameters-raweb

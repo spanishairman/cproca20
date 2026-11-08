@@ -1,0 +1,18 @@
+---
+- name: <<< PLAYBOOK 06 >>> CPROCA AND CPRORA Servers | Create group crl-writers and set ACLs. Create user with admins privileges
+  hosts: caservers
+  become: true
+  roles:
+    - 06.system-group-user-create
+
+- name: <<< PLAYBOOK 06 >>> CPROCA | Create CryptoPro Ca service login
+  hosts: cprocaserver
+  become: true
+  roles:
+    - 06.system-caservice-user-create
+
+- name: <<< PLAYBOOK 06 >>> CPRORA | Create user CryptoPro Ra service login
+  hosts: cproraserver
+  become: true
+  roles:
+    - 06.system-raservice-user-create

@@ -1,0 +1,16 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/07.cproca-extract-distro
+- name: CryptoPro CA. APT. Install package "unzip" to latest version
+  ansible.builtin.apt:
+    name: unzip
+    state: present
+    update_cache: false
+
+- name: CryptoPro CA. Extract archive.
+  ansible.builtin.shell: |
+    test -d "{{ cabase }}" || mkdir $_
+    unzip -o -d "{{ cabase }}" "{{ cadistro }}"
+  args:
+    executable: /bin/bash
+    chdir: "{{ dst_dirinst }}"

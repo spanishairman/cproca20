@@ -1,0 +1,18 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/16.cprora-certs-up
+- name: UP.
+  ansible.builtin.copy:
+    src: "{{ localdir }}/share/{{ item }}.cer"
+    dest: "/home/{{ cpra_srv_acc }}/{{ item }}.cer"
+  loop:
+    - "{{ crt_ra_srv }}"
+    - "{{ crt_ra_clnt }}"
+    - "{{ crt_ra_webclnt }}"
+    - "{{ crt_ra_pkicaclnt }}"
+    - "{{ crt_opertls }}"
+    - "{{ crt_opersign }}"
+    - "{{ cacert }}"
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  notify: "certificates"

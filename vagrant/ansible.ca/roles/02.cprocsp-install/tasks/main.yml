@@ -1,0 +1,39 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/02.cprocsp-install
+- name: INSTALL CSP. Extract Archive.
+  ansible.builtin.shell: |
+    test -d "{{ dircsp }}" || mkdir $_
+    tar -C "{{ dircsp }}" -xvzf {{ csp_distro }} --strip-components 1
+  args:
+    executable: /bin/bash
+    chdir: "{{ dst_dirinst }}/"
+
+- name: INSTALL CSP. Install Software CryptoPro CSP, lsb-cprocsp-devel, cprocsp-pki-cades.
+  ansible.builtin.shell: |
+    ./install.sh kc1 lsb-cprocsp-devel cprocsp-pki-cades
+  args:
+    executable: /bin/bash
+    chdir: "{{ dst_dirinst }}/{{ dircsp }}/"
+  become: true
+
+- name: CONFIGURE CSP. Setup Licenses for CSP.
+  ansible.builtin.shell: |
+    sbin/amd64/cpconfig -license -set "{{ liccsp }}"
+  args:
+    executable: /bin/bash
+    chdir: "{{ cspbase }}"
+  become: true
+
+- name: CONFIGURE CSP. Add Gamma.
+  ansible.builtin.shell: |
+    cp "{{ dst_dirinst }}"/Gamma/db1/kis_1 /var/opt/cprocsp/dsrf/db1/
+    cp "{{ dst_dirinst }}"/Gamma/db2/kis_1 /var/opt/cprocsp/dsrf/db2/
+    chmod -R 777 "/var/opt/cprocsp/dsrf/"
+    "{{ cspsbindir }}"/cpconfig -hardware rndm -add cpsd -name 'cpsd rng' -level 3
+    "{{ cspsbindir }}"/cpconfig -hardware rndm -configure cpsd -add string /db1/kis_1 /var/opt/cprocsp/dsrf/db1/kis_1
+    "{{ cspsbindir }}"/cpconfig -hardware rndm -configure cpsd -add string /db2/kis_1 /var/opt/cprocsp/dsrf/db2/kis_1
+  args:
+    executable: /bin/bash
+  become: true
+  notify: Restart Cprocsp

@@ -1,0 +1,21 @@
+---
+- name: <<< PLAYBOOK 16 >>> CPRORA | Creating a Certificate Issue Request for RA Server, RA Client, RA Web Client
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  roles:
+    - 16.cprora-certs-req
+
+- name: <<< PLAYBOOK 16 >>> CPROCA | Upload from RA, creating a Certificate Issue Request for NATS Server, NATS Client, PKICA Client, CA Client. Issue a certificates, and fetch certs for RA
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  roles:
+    - 16.cprora-reqs-up
+    - 16.cproca-certs-req
+    - 16.cproca-certs-issue
+
+- name: <<< PLAYBOOK 16 >>> UP CERIFICATES | Upload certificates to RA.
+  hosts: cproraserver
+  roles:
+    - 16.cprora-certs-up

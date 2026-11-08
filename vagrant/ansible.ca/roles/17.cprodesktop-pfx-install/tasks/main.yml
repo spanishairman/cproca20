@@ -1,0 +1,19 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/17.cprodesktop-pfx-install
+- name: Install a Certificates for Operator
+  ansible.builtin.shell: |
+    ./certmgr -install -pfx -store uMy -file "{{ ansible_user_dir }}/{{ item }}" -newpin '' -pin 11111111
+  args:
+    executable: /bin/bash
+    chdir: "{{ cspbindir }}"
+  loop:
+    - "{{ crt_opertls }}.pfx"
+    - "{{ crt_opersign }}.pfx"
+
+- name: Install Cerificates to uRoot
+  ansible.builtin.shell: |
+    yes o | ./certmgr -install -store uRoot -file "{{ ansible_user_dir }}/{{ cacert }}.cer"
+  args:
+    executable: /bin/bash
+    chdir: "{{ cspbindir }}"

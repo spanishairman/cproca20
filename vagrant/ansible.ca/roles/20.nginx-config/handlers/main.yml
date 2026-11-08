@@ -1,0 +1,7 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/20.nginx-config
+- name: Restart service
+  ansible.builtin.service:
+    name: nginx.service
+    state: restarted

@@ -1,0 +1,7 @@
+---
+- name: <<< PLAYBOOK 05 >>> POSTGRESQL | Configure Server.
+  hosts: cprodbserver
+  become: true
+  become_user: postgres
+  roles:
+    - 05.pgsql-create-dbs-roles

@@ -1,0 +1,15 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/20.nginx-config
+- name: Nginx. Get serial
+  ansible.builtin.shell:
+    /opt/cprocsp/bin/amd64/certmgr -list -certificate -file /home/{{ cpra_srv_acc }}/{{ crt_ra_srv }}.cer | grep -i "Серийный" | awk '{print $4}'
+  args:
+    executable: /bin/bash
+  register: certserial
+
+- name: Nginx. Copy Template
+  ansible.builtin.template:
+    src: nginx.j2
+    dest: /etc/nginx/nginx.conf
+  notify: Restart service

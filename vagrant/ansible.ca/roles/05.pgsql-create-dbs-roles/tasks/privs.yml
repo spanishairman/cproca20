@@ -1,0 +1,26 @@
+---
+- name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}", grant privileges on databases objects (database) for roles.
+  community.postgresql.postgresql_privs:
+    database: "{{ item.database }}"
+    privs: "{{ item.privs }}"
+    type: "{{ item.type }}"
+    roles: "{{ item.roles }}"
+    grant_option: "{{ item.grant_option }}"
+    state: present
+  loop:
+    - { database: "{{ cpca_dbadmin }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
+    - { database: "{{ cpra_dbadmin }}", roles: "{{ cpra_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
+
+- name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}", grant privileges on databases objects (schema) for roles.
+  community.postgresql.postgresql_privs:
+    database: "{{ item.database }}"
+    privs: "{{ item.privs }}"
+    type: "{{ item.type }}"
+    roles: "{{ item.roles }}"
+    objs: "{{ item.objs }}"
+    state: present
+  loop:
+    - { database: "{{ cpca_dbadmin }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
+    - { database: "{{ cpra_dbadmin }}", roles: "{{ cpra_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
+
+

@@ -1,0 +1,10 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/19.config-distros-set-parameters-ra
+- name: Restart services
+  ansible.builtin.service:
+    name: "{{ item.name }}"
+    state: restarted
+  loop:
+    - { name: cryptopro.ra.service }
+    - { name: cryptopro.ra.web.service }

@@ -1,0 +1,6 @@
+---
+- name: <<< PLAYBOOK 01 >>> COPY DISTRO | Group of servers "caservers".
+  hosts: cspservers
+  become: false
+  roles:
+    - 01.copy-distro

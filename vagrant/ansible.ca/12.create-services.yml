@@ -1,0 +1,12 @@
+---
+- name: <<< PLAYBOOK 12 >>> REGISTRATION OF SERVICES | Server cpcaserver, services CryptoPro.Ca.Service, Nats-Streaming-Server
+  hosts: cproca
+  become: true
+  roles:
+    - 12.create-services-ca
+
+- name: <<< PLAYBOOK 12 >>> REGISTRATION OF SERVICES | Server cpraserver, services CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
+  hosts: cproraserver
+  become: true
+  roles:
+    - 12.create-services-ra

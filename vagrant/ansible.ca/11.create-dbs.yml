@@ -1,0 +1,14 @@
+---
+- name: <<< PLAYBOOK 11 >>> CPROCA | Create databases for CA service.
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  roles:
+    - 11.create-dbs-ca
+
+- name: <<< PLAYBOOK 11 >>> CPRORA | Create databases for RA service.
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  roles:
+    - 11.create-dbs-ra

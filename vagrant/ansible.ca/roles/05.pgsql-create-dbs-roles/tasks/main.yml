@@ -1,0 +1,23 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/05.pgsql-create-dbs-roles
+- name: PostgreSQL. Configure Server. Create "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}" users, and grant access to bases create.
+  community.postgresql.postgresql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    expires: "infinity"
+    role_attr_flags: CREATEDB
+  loop:
+    - { name: "{{ cpca_dbadmin }}", password: "{{ cpca_dbpass }}" }
+    - { name: "{{ cpra_dbadmin }}", password: "{{ cpra_dbpass }}" }
+
+- name: PostgreSQL. Configure Server. Create a new databases "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}".
+  community.postgresql.postgresql_db:
+    name: "{{ item.name }}"
+    owner: "{{ item.owner }}"
+  loop:
+    - { name: "{{ cpca_dbadmin }}", owner: "{{ cpca_dbadmin }}" }
+    - { name: "{{ cpra_dbadmin }}", owner: "{{ cpra_dbadmin }}" }
+
+- name: PostgreSQL. Grant privileges on databases objects
+  import_tasks: privs.yml

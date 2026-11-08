@@ -1,0 +1,6 @@
+---
+- name: <<< PLAYBOOK 04 >>> CONFIGURE POSTGRESQL | Configure Server.
+  hosts: cprodbserver
+  become: true
+  roles:
+    - 04.pgsql-server-config

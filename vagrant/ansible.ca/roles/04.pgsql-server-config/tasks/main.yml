@@ -1,0 +1,24 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/04.pgsql-server-config
+- name: CONFIGURE POSTGRESQL. Configure Server. Edit pg_hba configuration file. Add "{ cproca-test }" and "{ cprora-test }" access
+  ansible.builtin.postgresql_pg_hba:
+    dest: /etc/postgresql/{{ pg_ver }}/main/pg_hba.conf
+    contype: host
+    users: "{{ item.users }}"
+    source: "{{ item.source }}/32"
+    databases: all
+    method: md5
+    create: true
+  loop:
+    - { source: "{{ ca_address }}", users: "{{ cpca_dbadmin }}" }
+    - { source: "{{ ra_address }}", users: "{{ cpra_dbadmin }}" }
+
+- name: CONFIGURE POSTGRESQL. Configure Server. Edit postgresql.conf configuration file. Set listen_addresses = '*'
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/{{ pg_ver }}/main/postgresql.conf
+    line: "listen_addresses = '*'"
+    insertafter: "#listen_addresses = 'localhost'"
+    firstmatch: yes
+    state: present
+  notify: Restart PostgreSQL

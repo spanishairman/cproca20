@@ -1,0 +1,27 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/12.create-services-ca
+- name: REGISTRATION OF SERVICE CryptoPro.Ca.Service. Copy Template
+  vars:
+    description: 'CryptoPro.Ca.Service'
+    folder: 'CryptoPro.Ca.Service'
+    service: 'CryptoPro.Ca.Service'
+    identifier: 'cryptopro-ca-service'
+    owner: 'cpca-srv'
+    key: ''
+  ansible.builtin.template:
+    src: services.j2
+    dest: /etc/systemd/system/cryptopro.ca.service
+
+- name: REGISTRATION OF SERVICE Nats-Streaming-Server. Copy Template
+  vars:
+    description: 'nats-streaming-server'
+    folder: 'nats-streaming'
+    service: 'nats-streaming-server'
+    identifier: 'nats-streaming-server'
+    owner: 'cpca-srv'
+    key: '-sc /opt/cpca/nats-streaming/nats.no-tls.conf'
+  ansible.builtin.template:
+    src: services.j2
+    dest: /etc/systemd/system/nats-streaming-server.service
+  notify: "services registration"

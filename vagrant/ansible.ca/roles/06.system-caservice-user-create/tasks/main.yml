@@ -1,0 +1,27 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/06.system-caservice-user-create
+- name: CryptoPro CA. Add the user "{{ cpca_srv_acc }}" with a bash shell, appending the group 'crl-writers' and to the user's groups
+  ansible.builtin.user:
+    name: "{{ cpca_srv_acc }}"
+    password: '!'
+    comment: CryptoPro CA Service
+    shell: /bin/bash
+    create_home: yes
+    groups: crl-writers
+    append: yes
+
+- name: CryptoPro CA. Create .pgpass file for "{{ cpca_srv_acc }}"
+  ansible.builtin.shell: |
+    echo '# host:port:database:user:password' > /home/"{{ cpca_srv_acc }}"/.pgpass
+    echo "{{ pg_address }}:5432:*:{{ cpca_dbadmin }}:{{ cpca_dbpass }}" >> /home/"{{ cpca_srv_acc }}"/.pgpass
+    echo "{{ pg_address }}:5432:*:{{ cpra_dbadmin }}:{{ cpra_dbpass }}" >> /home/"{{ cpca_srv_acc }}"/.pgpass
+  args:
+    executable: /bin/bash
+
+- name: Cproca. Chmod .pgpass
+  ansible.builtin.file:
+    path: "/home/{{ cpca_srv_acc }}/.pgpass"
+    owner: "{{ cpca_srv_acc }}"
+    group: "{{ cpca_srv_acc }}"
+    mode: '0600'

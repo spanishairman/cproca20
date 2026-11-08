@@ -1,0 +1,7 @@
+---
+- name: <<< PLAYBOOK 18 >>> ISSUE A CRLS
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  roles:
+    - 18.release-crl

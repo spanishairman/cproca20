@@ -1,0 +1,13 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/03.pgsql-client-install
+- name: INSTALL POSTGRESQL. Install Client.
+  ansible.builtin.apt:
+    name: acl,postgresql-client,python3-cryptography
+    state: present
+    update_cache: false
+
+- name: INSTALL Libssl1.1.
+  ansible.builtin.apt:
+    deb: "{{ dst_dirinst }}/{{ libssl1 }}"
+    state: present

@@ -1,0 +1,31 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/16.cproca-certs-issue
+- name: INSTALL
+  ansible.builtin.shell: |
+    ./{{ cryptcpbin }} -instcert -from_request {{ ansible_user_dir }}/{{ item }}.cer
+  args:
+    executable: /bin/bash
+    chdir: "{{ cspbindir }}"
+  loop:
+    - "{{ crt_ca_natsclnt }}"
+    - "{{ crt_ca_natssrv }}"
+    - "{{ crt_ca_pkicaclnt }}"
+    - "{{ crt_ca_caclnt }}"
+  listen: "certificates"
+
+- name: FETCH
+  ansible.builtin.fetch:
+    src: "{{ ansible_user_dir }}/{{ item }}.cer"
+    dest: "{{ localdir }}/share/"
+    flat: 'true'
+  loop:
+    - "{{ crt_ra_srv }}"
+    - "{{ crt_ra_clnt }}"
+    - "{{ crt_ra_webclnt }}"
+    - "{{ crt_ra_pkicaclnt }}"
+    - "{{ crt_opertls }}"
+    - "{{ crt_opersign }}"
+    - "{{ cacert }}"
+  listen: "certificates"
+

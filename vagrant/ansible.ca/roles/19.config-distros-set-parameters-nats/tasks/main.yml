@@ -1,0 +1,19 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/19.config-distros-set-parameters-nats
+- name: CryptoPro CA. Copy a Certificate for NATS Server
+  ansible.builtin.shell: |
+    cp {{ item.file }} {{ natsbase }}/ssl/{{ item.target }}
+  args:
+    executable: /bin/bash
+    chdir: /home/{{ cpca_srv_acc }}
+  loop:
+    - { file: "{{ crt_ca_natsclnt }}.cer", target: "nats-client.cer" }
+    - { file: "{{ crt_ca_natssrv }}.cer", target: "nats-server.cer" }
+
+- name: CryptoPro CA. Edit /etc/systemd/system/nats-streaming-server.service for enable TLS-connections
+  ansible.builtin.shell: |
+    sed -i "s/nats.no-tls.conf/nats.conf/" /etc/systemd/system/nats-streaming-server.service
+  args:
+    executable: /bin/bash
+  notify: "services registration"

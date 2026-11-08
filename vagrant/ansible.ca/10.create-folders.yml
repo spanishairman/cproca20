@@ -1,0 +1,12 @@
+---
+- name: <<< PLAYBOOK 10 >>> CPROCA. CREATE FOLDERS SET OWNS | Create a messages store dir for nats-streaming-server. Create directories.
+  hosts: cprocaserver
+  become: true
+  roles:
+    - 10.create-folders-ca
+
+- name: <<< PLAYBOOK 09 >>> CPRORA. CREATE FOLDERS SET OWNS | Create directories
+  hosts: cproraserver
+  become: true
+  roles:
+    - 10.create-folders-ra
