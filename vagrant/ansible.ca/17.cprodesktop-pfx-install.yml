@@ -1,0 +1,6 @@
+---
+- name: <<< PLAYBOOK 17 >>> Install PFXs | Upload keys to Desktop.
+  hosts: cprodesktopserver
+  roles:
+    - 17.cprodesktop-pfx-up
+    - 17.cprodesktop-pfx-install
