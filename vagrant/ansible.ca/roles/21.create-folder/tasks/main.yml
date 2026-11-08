@@ -1,0 +1,9 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/21.create-folder
+- name: RA Folder Create
+  ansible.builtin.shell: |
+    ./{{ pkicabin }} ra folder add --name Ra
+  args:
+    executable: /bin/bash
+    chdir: "{{ pkicabase }}"

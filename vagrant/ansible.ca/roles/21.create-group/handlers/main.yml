@@ -1,0 +1,9 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/21.create-group
+- name: Group permissions
+  ansible.builtin.shell: |
+    ./{{ pkicabin }} ra permission grant --folder Ra --group Operators --manage-user --submit-cert-request --resolve-cert-request --submit-rev-request --resolve-rev-request
+  args:
+    executable: /bin/bash
+    chdir: "{{ pkicabase }}"

@@ -1,0 +1,9 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/21.create-operator
+- name: RA Operator Create
+  ansible.builtin.shell: |
+    ./{{ pkicabin }} ra operator add --last-name "Петров" --first-name "Петр" --tls-cert-file {{ ansible_user_dir }}/{{ crt_opertls }}.cer --signing-cert-file {{ ansible_user_dir }}/{{ crt_opersign }}.cer --group Operators --default-folder Ra --login Petrov
+  args:
+    executable: /bin/bash
+    chdir: "{{ pkicabase }}"

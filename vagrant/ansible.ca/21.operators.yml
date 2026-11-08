@@ -1,0 +1,9 @@
+---
+- name: <<< PLAYBOOK 20 >>> CPRORA | Create folder, group and operator
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  roles:
+    - 21.create-folder
+    - 21.create-group
+    - 21.create-operator
