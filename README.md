@@ -751,7 +751,7 @@ WantedBy=multi-user.target
   - CA-Client - для подключения к службе очередей со стороны службы _Cryptopro.Ca_.
 
 Плейбук [16.certs-req-issue-inst.yml](vagrant/ansible.ca/16.certs-req-issue-inst.yml):
-details>
+<details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
