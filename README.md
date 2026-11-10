@@ -228,8 +228,8 @@ retry_files_enabled = False
   - :white_check_mark: перезапуск службы криптопрвайдера.
 
 ### Установка PostgreSQL Server
-Клиентская и серверная часть Postgresql устанавливается из репозиториев Debian. Для этого используем роль [03.pgsql-client-install](vagrant/ansible.ca/roles/03.pgsql-client-install), 
-плейбук [03.pgsql-install.yml](vagrant/ansible.ca/03.pgsql-install.yml)
+Клиентская и серверная часть Postgresql устанавливается из репозиториев Debian. Для этого используем роли [03.pgsql-client-install](vagrant/ansible.ca/roles/03.pgsql-client-install), 
+[03.pgsql-server-install](vagrant/ansible.ca/roles/03.pgsql-server-install)  плейбук [03.pgsql-install.yml](vagrant/ansible.ca/03.pgsql-install.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -263,7 +263,8 @@ retry_files_enabled = False
 
 
 ### Настройка PostgreSQL Server. Предоставление доступа для внешних подключений
-Откроем доступ для подключения к базам данных с удалённых хостов cproca-test и cprora-test. Плейбук [04.postgres-configure.yml](vagrant/ansible.ca/play/04.postgres-configure.yml)
+Откроем доступ для подключения к базам данных с удалённых хостов cproca-test и cprora-test. Роль [04.pgsql-server-config](vagrant/ansible.ca/roles/04.pgsql-server-config), 
+плейбук [04.pgsql-config.yml](vagrant/ansible.ca/04.pgsql-config.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -272,33 +273,8 @@ retry_files_enabled = False
 - name: <<< PLAYBOOK 04 >>> CONFIGURE POSTGRESQL | Configure Server.
   hosts: cprodbserver
   become: true
-  tasks:
-  - name: CONFIGURE POSTGRESQL. Configure Server. Edit pg_hba configuration file. Add "{ cproca-test }" and "{ cprora-test }" access
-    ansible.builtin.postgresql_pg_hba:
-      dest: /etc/postgresql/{{ pg_ver }}/main/pg_hba.conf
-      contype: host
-      users: "{{ item.users }}"
-      source: "{{ item.source }}/32"
-      databases: all
-      method: md5
-      create: true
-    loop:
-      - { source: "{{ ca_address }}", users: "{{ cpca_dbadmin }}" }
-      - { source: "{{ ra_address }}", users: "{{ cpra_dbadmin }}" }
-
-  - name: CONFIGURE POSTGRESQL. Configure Server. Edit postgresql.conf configuration file. Set listen_addresses = '*'
-    ansible.builtin.lineinfile:
-      path: /etc/postgresql/{{ pg_ver }}/main/postgresql.conf
-      line: "listen_addresses = '*'"
-      insertafter: "#listen_addresses = 'localhost'"
-      firstmatch: yes
-      state: present
-
-  - name: CONFIGURE POSTGRESQL. Configure Server. Restart service PostgreSQL.
-    ansible.builtin.service:
-      name: postgresql.service
-      state: restarted
-
+  roles:
+    - 04.pgsql-server-config
 ```
 
 </details>
@@ -308,7 +284,7 @@ retry_files_enabled = False
   - :white_check_mark: с хоста __cprora__ для пользователя __cpra\_dbadmin__
 
 ### Настройка PostgreSQL Server. Создание комплекта баз данных и ролей, настройка привилегий
-Создание баз данных и ролей, а так-же, предоставление привилегий для этих ролей на созданных базах. Плейбук [05.postgres-create-dbs-roles.yml](vagrant/ansible.ca/play/05.postgres-create-dbs-roles.yml)
+Создание баз данных и ролей, а так-же, предоставление привилегий для этих ролей на созданных базах. Роль [05.pgsql-create-dbs-roles](vagrant/ansible.ca/roles/05.pgsql-create-dbs-roles) плейбук [05.pgsql-create-dbs-roles.yml](vagrant/ansible.ca/05.pgsql-create-dbs-roles.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -318,50 +294,8 @@ retry_files_enabled = False
   hosts: cprodbserver
   become: true
   become_user: postgres
-  tasks:
-    - name: PostgreSQL. Configure Server. Create "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}" users, and grant access to bases create.
-      community.postgresql.postgresql_user:
-        name: "{{ item.name }}"
-        password: "{{ item.password }}"
-        expires: "infinity"
-        role_attr_flags: CREATEDB
-      loop:
-        - { name: "{{ cpca_dbadmin }}", password: "{{ cpca_dbpass }}" }
-        - { name: "{{ cpra_dbadmin }}", password: "{{ cpra_dbpass }}" }
-
-    - name: PostgreSQL. Configure Server. Create a new databases "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}".
-      community.postgresql.postgresql_db:
-        name: "{{ item.name }}"
-        owner: "{{ item.owner }}"
-      loop:
-        - { name: "{{ cpca_dbadmin }}", owner: "{{ cpca_dbadmin }}" }
-        - { name: "{{ cpra_dbadmin }}", owner: "{{ cpra_dbadmin }}" }
-
-    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}", grant privileges on databases objects (database) for roles.
-      community.postgresql.postgresql_privs:
-        database: "{{ item.database }}"
-        privs: "{{ item.privs }}"
-        type: "{{ item.type }}"
-        roles: "{{ item.roles }}"
-        grant_option: "{{ item.grant_option }}"
-        state: present
-      loop:
-        - { database: "{{ cpca_dbadmin }}", roles: "{{ cpca_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
-        - { database: "{{ cpra_dbadmin }}", roles: "{{ cpra_dbadmin }}", privs: 'ALL', type: 'database', grant_option: 'true' }
-
-    - name: PostgreSQL. Configure Server. Connect to databases "{{ cpca_dbadmin }}" and "{{ cpra_dbadmin }}", grant privileges on databases objects (schema) for roles.
-      community.postgresql.postgresql_privs:
-        database: "{{ item.database }}"
-        privs: "{{ item.privs }}"
-        type: "{{ item.type }}"
-        roles: "{{ item.roles }}"
-        objs: "{{ item.objs }}"
-        state: present
-      loop:
-        - { database: "{{ cpca_dbadmin }}", roles: "{{ cpca_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
-        - { database: "{{ cpra_dbadmin }}", roles: "{{ cpra_dbadmin }}", privs: 'CREATE', type: 'schema', objs: 'public' }
-
-
+  roles:
+    - 05.pgsql-create-dbs-roles
 ```
 </details>
 
@@ -381,12 +315,13 @@ retry_files_enabled = False
 
 > [!IMPORTANT]
 > Рабочий комплект баз данных _Центра сертификации_, _Центра регистрации_ и _Реестра сертификатов_ будет создан позднее при помощи утилиты _pkica_.
-> А в данном случае были созданы роли и одноименные базы данных по причине того, что они требуются для работы этой утилиты с сервером баз данных. 
+> А в данном случае были созданы роли и одноименные базы данных, так как они требуются для подключения этой утилиты к серверу баз данных 
+> (Утилита _pkica_ при подключении к Postgresql использует формат логина _username@username_). 
 > Если вместо служебных ролей __cpca_dbadmin__ и ___cpra_dbadmin__ в настройках подключения использовать встроенную роль _Postgres_, то данный шаг выполнять не требуется. 
 
 ### Центр сертификации и Центр регистрации. Создание группы безопасности и служебных пользователей. Настройка файлов аутентификации на сервере баз данных
 Для установки CRL в хранилище __LocalMachine\CA__ на серверах Центра Сертификации и Центра Регистрации создается группа __crl-writers__. В эту группу добавляется служебный пользователь, с правами которого работают службы ЦС и ЦР.
-Так же, для служебных учетных записей настраивается подключение к базам данных. Плейбук [06.cproca-create-groups-users.yml](vagrant/ansible.ca/play/06.cproca-create-groups-users.yml):
+Так же, для служебных учетных записей настраивается подключение к базам данных. Плейбук [06.system-create-groups-users.yml](vagrant/ansible.ca/06.system-create-groups-users.yml):
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -395,87 +330,20 @@ retry_files_enabled = False
 - name: <<< PLAYBOOK 06 >>> CPROCA AND CPRORA Servers | Create group crl-writers and set ACLs. Create user with admins privileges
   hosts: caservers
   become: true
-  tasks:
-    - name: CryptoPro CA. Ensure group "crl-writers" exists
-      ansible.builtin.group:
-        name: crl-writers
-        state: present
-
-    - name: CryptoPro CA. Set ACL privileges for crl-writers group on "{{ mstore_ca }}"
-      ansible.posix.acl:
-        path: "{{ mstore_ca }}"
-        entity: crl-writers
-        etype: group
-        permissions: rw
-        default: false
-        recursive: false
-        state: present
-
-    - name: CREATE ADMIN ACCOUNT. Add the user "{{ admin_acc }}" with a bash shell and with homedir
-      ansible.builtin.user:
-        name: "{{ admin_acc }}"
-        password: "{{ admin_acc_pass }}"
-        comment: CryptoPro CA Admin Account
-        shell: /bin/bash
-        create_home: true
+  roles:
+    - 06.system-group-user-create
 
 - name: <<< PLAYBOOK 06 >>> CPROCA | Create CryptoPro Ca service login
   hosts: cprocaserver
   become: true
-  tasks:
-    - name: CryptoPro CA. Add the user "{{ cpca_srv_acc }}" with a bash shell, appending the group 'crl-writers' and to the user's groups
-      ansible.builtin.user:
-        name: "{{ cpca_srv_acc }}"
-        password: '!'
-        comment: CryptoPro CA Service
-        shell: /bin/bash
-        create_home: yes
-        groups: crl-writers
-        append: yes
-
-    - name: CryptoPro CA. Create .pgpass file for "{{ cpca_srv_acc }}"
-      ansible.builtin.shell: |
-        echo '# host:port:database:user:password' > /home/"{{ cpca_srv_acc }}"/.pgpass
-        echo "{{ pg_address }}:5432:*:{{ cpca_dbadmin }}:{{ cpca_dbpass }}" >> /home/"{{ cpca_srv_acc }}"/.pgpass
-        echo "{{ pg_address }}:5432:*:{{ cpra_dbadmin }}:{{ cpra_dbpass }}" >> /home/"{{ cpca_srv_acc }}"/.pgpass
-      args:
-        executable: /bin/bash
-
-    - name: Cproca. Chmod .pgpass
-      ansible.builtin.file:
-        path: "/home/{{ cpca_srv_acc }}/.pgpass"
-        owner: "{{ cpca_srv_acc }}"
-        group: "{{ cpca_srv_acc }}"
-        mode: '0600'
+  roles:
+    - 06.system-caservice-user-create
 
 - name: <<< PLAYBOOK 06 >>> CPRORA | Create user CryptoPro Ra service login
   hosts: cproraserver
   become: true
-  tasks:
-    - name: CryptoPro RA. Add the user "{{ cpra_srv_acc }}" with a bash shell
-      ansible.builtin.user:
-        name: "{{ cpra_srv_acc }}"
-        password: '!'
-        comment: CryptoPro RA Service
-        shell: /bin/bash
-        create_home: yes
-        groups: crl-writers
-        append: yes
-
-    - name: CryptoPro RA. Create .pgpass file for "{{ cpra_srv_acc }}"
-      ansible.builtin.shell: |
-        echo "# host:port:database:user:password" > /home/"{{ cpra_srv_acc }}"/.pgpass
-        echo "{{ pg_address }}:5432:*:{{ cpra_dbadmin }}:{{ cpra_dbpass }}" >> /home/"{{ cpra_srv_acc }}"/.pgpass
-        echo "{{ pg_address }}:5432:*:{{ cpca_dbadmin }}:{{ cpca_dbpass }}" >> /home/"{{ cpra_srv_acc }}"/.pgpass
-      args:
-        executable: /bin/bash
-
-    - name: Cprora. Chmod .pgpass
-      ansible.builtin.file:
-        path: "/home/{{ cpra_srv_acc }}/.pgpass"
-        owner: "{{ cpra_srv_acc }}"
-        group: "{{ cpra_srv_acc }}"
-        mode: '0600'
+  roles:
+    - 06.system-raservice-user-create
 ```
 </details>
 
@@ -483,7 +351,7 @@ retry_files_enabled = False
 Установка службы Центра Сертификации, как и Центра Регистрации - это простое копирование содержимого архива ca-linux-x64-x.xx.x.xx.zip в каталог /opt/cpca.
 
 После копирования необходимо дать сервисным учетным записям __cpca-srv__ и __cpra-srv__ права на запуск соответствующих исполняемых файлов - **CryptoPro.Ca.Service**, **CryptoPro.Ra.Service** и **CryptoPro.Ra.Web**. 
-Плейбук [07.cproca-extract-distro-set-permissions.yml](vagrant/ansible.ca/play/07.cproca-extract-distro-set-permissions.yml):
+Плейбук [07.cproca-extract-distro-set-permissions.yml](vagrant/ansible.ca/07.cproca-extract-distro-set-permissions.yml):
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -492,74 +360,21 @@ retry_files_enabled = False
 - name: <<< PLAYBOOK 07 >>> CPROCA and CPRORA | Install package CPCA.
   hosts: caservers
   become: true
-  tasks:
-    - name: CryptoPro CA. APT. Install package "unzip" to latest version
-      ansible.builtin.apt:
-        name: unzip
-        state: present
-        update_cache: false
-
-    - name: CryptoPro CA. Extract archive.
-      ansible.builtin.shell: |
-        test -d "{{ cabase }}" || mkdir $_
-        unzip -o -d "{{ cabase }}" "{{ cadistro }}"
-      args:
-        executable: /bin/bash
-        chdir: "{{ dst_dirinst }}"
+  roles:
+    - 07.cproca-extract-distro
 
 - name: <<< PLAYBOOK 07 >>> CPROCA | Set permissions and ACL privileges for CryptoPro.Ca.Service and Pkica util
   hosts: cprocaserver
   become: true
-  tasks:
-    - name: CryptoPro CA. Chmod {{ cabase }}
-      ansible.builtin.file:
-        path: "{{ cabase }}"
-        group: "{{ cpca_srv_acc }}"
-        mode: o-rwx
-        recurse: true
+  roles:
+    - 07.caservice-set-perms
 
-    - name: CryptoPro CA. Set ACL privileges for PkiCA, CryptoPro.Ca.Service, Nats-Streaming
-      ansible.posix.acl:
-        path: "{{ item.path }}"
-        entity: "{{ item.entity }}"
-        etype: "{{ item.etype }}"
-        permissions: "{{ item.permissions }}"
-        default: "{{ item.default }}"
-        recursive: "{{ item.recursive }}"
-        state: "{{ item.state }}"
-      loop:
-        - { path: "{{ casrvbase }}/{{ casrvsbin }}", entity: "{{ cpca_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
-        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ cpca_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
-        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ admin_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
-        - { path: "{{ natsbase }}/{{ natssbin }}", entity: "{{ cpca_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
-
-- name: <<< PLAYBOOK 07 >>> CPRORA | Set permissions and ACL privileges for CryptoPro.Ra.Service and Pkica util
+- name: <<< PLAYBOOK 07 >>> CPRORA | Set permissions and ACL privileges for CryptoPro.Ra.Service and Pkica util. Install Nginx
   hosts: cproraserver
   become: true
-  tasks:
-    - name: CryptoPro RA. Chmod {{ cabase }}
-      ansible.builtin.file:
-        path: "{{ cabase }}"
-        group: "{{ cpra_srv_acc }}"
-        mode: o-rwx
-        recurse: true
-    - name: CryptoPro RA. Set ACL privileges for CryptoPro.Ra.Service, CryptoPro.Ra.Web
-      ansible.posix.acl:
-        path: "{{ item.path }}"
-        entity: "{{ item.entity }}"
-        etype: "{{ item.etype }}"
-        permissions: "{{ item.permissions }}"
-        default: "{{ item.default }}"
-        recursive: "{{ item.recursive }}"
-        state: "{{ item.state }}"
-      loop:
-        - { path: "{{ rasrvbase }}/{{ rasrvsbin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
-        - { path: "{{ rawebbase }}/{{ rawebsbin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
-        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ cpra_srv_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
-        - { path: "{{ pkicabase }}/{{ pkicabin }}", entity: "{{ admin_acc }}", etype: 'user', permissions: rx, default: false, recursive: false, state: present }
-    - name: CryptoPro RA. Install Nginx
-      ansible.builtin.apt:
-        deb: "{{ nginxbase }}/{{ nginxdistro }}"
+  roles:
+    - 07.raservice-set-perms
+
 ```
 </details>
 
@@ -578,27 +393,31 @@ retry_files_enabled = False
  - _play/08.3.cproca-config-distros-set-parameters-ra.yml_ - то же самое, но для Центра регистрации;
  - _play/08.4.cproca-config-distros-set-parameters-raweb.yml_ - то же самое, но для Веб службы Центра регистрации.
 
-Плейбук [play/08.1.cproca-config-distros-set-parameters-pkica.yml](vagrant/ansible.ca/play/08.1.cproca-config-distros-set-parameters-pkica.yml):
+Плейбук [08.config-distros-set-parameters.yml](vagrant/ansible.ca/08.config-distros-set-parameters.yml):
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
-- name: <<< PLAYBOOK 08.1 >>> CPROCA AND CPRORA | Config pkica appsettings.json.
+- name: <<< PLAYBOOK 08.1 >>> CPROCA AND CPRORA | Set parameters for PKICA appsettings.json
   hosts: caservers
   become: true
-  tasks:
-    - name: CryptoPro CA and RA. Edit main config for pkica (pkica - Программа настройки УЦ)
-      ansible.builtin.shell: |
-        sed -i "/CaDb/{n;n;s/Server=localhost;Database=Ca;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpca_db }};Username={{ cpca_dbadmin }};Pooling=True/}" appsettings.json
-        sed -i "/CertRegistryDb/{n;n;s/Server=localhost;Database=CertRegistry;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ certreg_db }};Username={{ cpca_dbadmin }};Pooling=True/}" appsettings.json
-        sed -i "/RaDb/{n;n;s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpra_db }};Username={{ cpra_dbadmin }};Pooling=True/}" appsettings.json
-        sed -i 's/"Secure": true/"Secure": false/' appsettings.json
-        sed -i "/Nats/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
-        sed -i "/Stan/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
+  roles:
+    - 08.config-distros-set-parameters-pkica
+
+- name: <<< PLAYBOOK 08.2 >>> CPROCA | Set parameters for CA appsettings.json
+  hosts: cprocaserver
+  become: true
+  roles:
+    - 08.config-distros-set-parameters-ca
+
+- name: <<< PLAYBOOK 08.3 >>> CPRORA | Set parameters for RA and RAWEB appsettings.json
+  hosts: cproraserver
+  become: true
+  roles:
+    - 08.config-distros-set-parameters-ra
+    - 08.config-distros-set-parameters-raweb
+
 ```
 </details>
 
@@ -612,41 +431,7 @@ retry_files_enabled = False
     - :heavy_check_mark: __Nats__,
     - :heavy_check_mark: __Stan__. 
 
-
-Плейбук [play/08.2.cproca-config-distros-set-parameters-ca.yml](vagrant/ansible.ca/play/08.2.cproca-config-distros-set-parameters-ca.yml):
-<details> 
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 08.2 >>> CPROCA | Config appsettings.json.
-  hosts: cprocaserver
-  become: true
-  tasks:
-    - name: CryptoPro CA. Edit main config (CryptoPro.Ca.Service - Сервис ЦС)
-      ansible.builtin.shell: |
-        sed -i "s/Server=localhost;Database=Ca;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpca_db }};Username={{ cpca_dbadmin }};Pooling=True/" appsettings.json
-        sed -i '/nats/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
-        sed -i '/ClientID/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
-        sed -i "/Nats/{n;s/localhost/$HOSTNAME/}" appsettings.json
-        sed -i "/Stan/{n;s/localhost/$HOSTNAME/}" appsettings.json
-        sed -i "s/\"SerialNumber\": \"\"/\"SerialNumber\": \"{{ licca }}\"/" appsettings.json
-        sed -i 's/"Company": ""/"Company": "{{ company }}"/' appsettings.json
-      args:
-        executable: /bin/bash
-        chdir: "{{ casrvbase }}"
-
-    - name: CryptoPro CA. Edit nats-streaming-server daemon config (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS)
-      ansible.builtin.shell: |
-        sed -i "s/ca.example/$HOSTNAME/" nats.no-tls.conf
-        sed -i "s/ca.example/{{ inventory_hostname }}/" nats.conf
-      args:
-        executable: /bin/bash
-        chdir: "{{ natsbase }}"
-```
-</details>
-
-Здесь мы для служб: 
+Далее, для служб: 
   - :white_check_mark: __CryptoPro CA__ на сервере Центра сертификации:
     - :heavy_check_mark: отредактировали строку подключения к базе данных Центра сертификации; 
     - :heavy_check_mark: отключили шифрование для подключения к службе __Nats__;
@@ -657,34 +442,7 @@ retry_files_enabled = False
   - :white_check_mark: __nats-streaming-server__:
     - :heavy_check_mark: изменили адрес, на котором работает служба.
 
-Плейбук [play/08.3.cproca-config-distros-set-parameters-ra.yml](vagrant/ansible.ca/play/08.3.cproca-config-distros-set-parameters-ra.yml):
-<details> 
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 08.3 >>> CPRORA | Config appsettings.json
-  hosts: cproraserver
-  become: true
-  tasks:
-    - name: CryptoPro RA. Edit main config (CryptoPro.Ra.Service - Сервис ЦР)
-      ansible.builtin.shell: |
-        sed -i "s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpra_db }};Username={{ cpra_dbadmin }};Pooling=True/" appsettings.json
-        sed -i '/nats/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
-        sed -i '/ClientID/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
-        sed -i "/Nats/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
-        sed -i "/Stan/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
-        sed -i 's/"PublishCrls": false/"PublishCrls": true/' appsettings.json
-        sed -i 's/"PublishCaCerts": false/"PublishCaCerts": true/' appsettings.json
-        sed -i "s/\"SerialNumber\": \"\"/\"SerialNumber\": \"{{ licra }}\"/" appsettings.json
-        sed -i 's/"Company": ""/"Company": "{{ company }}"/' appsettings.json
-      args:
-        executable: /bin/bash
-        chdir: "{{ rasrvbase }}"
-```
-</details>
-
-Здесь для службы __CryptoPro.Ra.Service__ на сервере Центра регистрации: 
+Для службы __CryptoPro.Ra.Service__ на сервере Центра регистрации: 
   - :white_check_mark: отредактировали строку подключения к базе данных Центра регистрации;
   - :white_check_mark: отключили шифрование для подключения к службе __Nats__;
   - :white_check_mark: отключили шифрование для подключения к службе __Stan__;
@@ -694,41 +452,7 @@ retry_files_enabled = False
   - :white_check_mark: включили публикацию сертификтов ЦС;
   - :white_check_mark: ввели серийный номер и название компании.
 
-
-Плейбук [play/08.4.cproca-config-distros-set-parameters-raweb.yml](vagrant/ansible.ca/play/08.4.cproca-config-distros-set-parameters-raweb.yml):
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 08.4 >>> CPRORA | Config appsettings.json
-  hosts: cproraserver
-  become: true
-  tasks:
-    - name: CryptoPro RA. Edit main config (CryptoPro.Ra.Web - Веб интерфейс RA)
-      ansible.builtin.shell: |
-        sed -i "s/Server=localhost;Database=Ra;Username=postgres;Pooling=True/Server={{ pg_address }};Database={{ cpra_db }};Username={{ cpra_dbadmin }};Pooling=True/" appsettings.json
-        sed -i '/nats/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
-        sed -i '/ClientID/{n;n;s/"Secure": true/"Secure": false/}' appsettings.json
-        sed -i "s/localhost:5000/$HOSTNAME:5000/" appsettings.json
-        sed -i "/Nats/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
-        sed -i "/Stan/{n;s/localhost/{{ ca_hostname }}/}" appsettings.json
-        sed -i "s/\"SerialNumber\": \"\"/\"SerialNumber\": \"{{ licra }}\"/" appsettings.json
-        sed -i 's/"Company": ""/"Company": "{{ company }}"/' appsettings.json
-      args:
-        executable: /bin/bash
-        chdir: "{{ rawebbase }}"
-
-    - name: CryptoPro RA. Edit main config (CryptoPro.Ra.Web.UI - Веб интерфейс RA)
-      ansible.builtin.shell: |
-        sed -i "s/ra.example/$HOSTNAME/" init.json
-      args:
-        executable: /bin/bash
-        chdir: "{{ rawebuibase }}"
-```
-</details>
-
-Здесь для службы __CryptoPro.Ra.Web.Service__ на сервере Центра регистрации: 
+И для службы __CryptoPro.Ra.Web.Service__ на сервере Центра регистрации: 
   - :white_check_mark: отредактировали строку подключения к базе данных Центра регистрации;
   - :white_check_mark: отключили шифрование для подключения к службе __Nats__;
   - :white_check_mark: отключили шифрование для подключения к службе __Stan__;
@@ -739,45 +463,34 @@ retry_files_enabled = False
 
 #### Способ 2. Использование ansible-модуля lineinfile
 
-В предыдущем параграфе все изменения производились с помощью модуля __shell__ и текстового процессора __sed__ - т.е. использовался т.н. _bashsible_. 
+В предыдущем плейбуке все изменения производились с помощью модуля __shell__ и текстового процессора __sed__ - т.е. использовался т.н. _bashsible_. 
 
-Здесь же, для получения того же результата, к которому приводит работа плейбуков 8.{1-4}, мы будем пользоваться модулем __lineinfile__. 
-
-Следующий плейбук [play/09.1.cproca-config-distros-set-parameters-pkica.yml](vagrant/ansible.ca/play/09.1.cproca-config-distros-set-parameters-pkica.yml) выполняет установку нужных параметров в файле __appsettings.json__ утилиты __pkica__:
+Здесь же, для получения того же результата, к которому приводит работа плейбука [08.config-distros-set-parameters.yml](vagrant/ansible.ca/08.config-distros-set-parameters.yml), 
+мы будем пользоваться модулем __lineinfile__.  Для этого используем следующий плейбук [09.config-distros-set-parameters.yml](vagrant/ansible.ca/09.config-distros-set-parameters.yml):
 
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
-- name: <<< PLAYBOOK 09.1 >>> CPROCA AND CPRORA | Config "ConnectionString" parameter for Pkica appsettings.json.
+- name: <<< PLAYBOOK 09.1 >>> CPROCA AND CPRORA | Config "ConnectionString" parameter for Pkica appsettings.json
   hosts: caservers
   become: true
-  tasks:
-    - name: CryptoPro CA. Edit pkica appsettings.json.
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.ss }}"
-        firstmatch: false
-        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
-      loop:
-        - { backup: true,  path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=CertRegistry", server: "{{ pg_address }}", database:  "{{ certreg_db }}", username: "{{ cpca_dbadmin }}" }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", ss: "Database=Ra", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
+  roles:
+    - 09.config-distros-set-parameters-pkica
 
-    - name: CryptoPro CA. Edit pkica appsettings.json.
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.search }}"
-        firstmatch: "{{ item.fm }}"
-        line: '{{ item.line }}'
-      loop:
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Url", fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
-        - { backup: false, path: "{{ pkicabase }}/appsettings.json", search: "Url", fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
+- name: <<< PLAYBOOK 09.2 >>> CPROCA | Set parameters for CA appsettings.json
+  hosts: cprocaserver
+  become: true
+  roles:
+  - 09.config-distros-set-parameters-ca
+
+- name: <<< PLAYBOOK 09.3 >>> CPRORA | Set parameters for RA and RAWEB appsettings.json
+  hosts: cproraserver
+  become: true
+  roles:
+  - 09.config-distros-set-parameters-ra
+  - 09.config-distros-set-parameters-raweb
 
 ```
 </details>
@@ -792,55 +505,7 @@ retry_files_enabled = False
   - :white_check_mark: отключили опцию шифрования при подключении к службе очередей __Stan__,
   - :white_check_mark: задали адрес для службы __Stan__,
 
-Следующий плейбук [play/09.2.cproca-config-distros-set-parameters-ca.yml](vagrant/ansible.ca/play/09.2.cproca-config-distros-set-parameters-ca.yml) выполняет установку нужных параметров в файле __appsettings.json__ Центра сертификации и файлах __nats.conf__, __nats.no-tls.conf__ Службы очередей _NATS Streaming_:
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 09.2 >>> CPROCA | Set parameters for CA appsettings.json.
-  hosts: cprocaserver
-  become: true
-  tasks:
-    - name: CryptoPro CA. Edit CA appsettings.json. Config "ConnectionString" parameter.
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.ss }}"
-        firstmatch: false
-        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
-      loop:
-        - { backup: true, path: "{{ casrvbase }}/appsettings.json", ss: "Database=Ca", server: "{{ pg_address }}", database: "{{ cpca_db }}", username: "{{ cpca_dbadmin }}" }
-
-    - name: CryptoPro CA. Edit CA appsettings.json. Config "Secure, Url, SN, Company" parameters
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.search }}"
-        firstmatch: "{{ item.fm }}"
-        line: '{{ item.line }}'
-      loop:
-        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
-        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Url", fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
-        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
-        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Url", fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
-        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "SerialNumber", fm: false, line: '    "SerialNumber": "{{ licca }}",' }
-        - { backup: false, path: "{{ casrvbase }}/appsettings.json", search: "Company", fm: false, line: '    "Company": "{{ company }}"' }
-
-    - name: CryptoPro CA. Edit nats-streaming-server daemon config (nats-streaming-server - Служба очередей NATS Streaming с поддержкой ГОСТ TLS). Config "Listen" parameter
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.search }}"
-        firstmatch: "{{ item.fm }}"
-        line: '{{ item.line }}'
-      loop:
-        - { backup: true, path: "{{ natsbase }}/nats.conf", search: "listen:", fm: true, line: 'listen:         {{ inventory_hostname }}:4222' }
-        - { backup: true, path: "{{ natsbase }}/nats.no-tls.conf", search: "listen", fm: true, line: 'listen:         {{ inventory_hostname }}:4222' }
-```
-</details>
-
-Здесь мы для служб:
+Далее, для служб:
   - :white_check_mark: __CryptoPro CA__ на сервере Центра сертификации:
     - :heavy_check_mark: отредактировали строку подключения к базе данных Центра сертификации;
     - :heavy_check_mark: отключили шифрование для подключения к службе __Nats__;
@@ -851,48 +516,7 @@ retry_files_enabled = False
   - :white_check_mark: __nats-streaming-server__ - Служба очередей NATS Streaming с поддержкой ГОСТ TLS:
     - :heavy_check_mark: изменили адрес, на котором работает эта служба.
 
-Плейбук [play/09.3.cprora-config-distros-set-parameters-ra.yml](vagrant/ansible.ca/play/09.3.cprora-config-distros-set-parameters-ra.yml) выполняет установку нужных параметров в файле __appsettings.json__ Центра регистрации:
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 09.3 >>> CPRORA | Set parameters for RA appsettings.json.
-  hosts: cproraserver
-  become: true
-  tasks:
-    - name: CryptoPro RA. Edit RA appsettings.json. Config "ConnectionString" parameter.
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.ss }}"
-        firstmatch: false
-        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
-      loop:
-        - { backup: true, path: "{{ rasrvbase }}/appsettings.json", ss: "Database=Ra", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
-
-    - name: CryptoPro RA. Edit RA appsettings.json. Config "Secure, Url, SN, Company" parameters
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.search }}"
-        firstmatch: "{{ item.fm }}"
-        line: '{{ item.line }}'
-      loop:
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "Url", fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "Url", fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "PublishCrls", fm: false, line: '    "PublishCrls": true,' }
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: '"NodeId":', fm: true, line: '    "NodeId": "{{ inventory_hostname }}"' }
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "PublishCaCerts", fm: false, line: '    "PublishCaCerts": true,' }
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: '"NodeId":', fm: false, line: '    "NodeId": "{{ inventory_hostname }}"' }
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "SerialNumber", fm: false, line: '    "SerialNumber": "{{ licra }}",' }
-        - { backup: false, path: "{{ rasrvbase }}/appsettings.json", search: "Company", fm: false, line: '    "Company": "{{ company }}"' }
-```
-</details>
-
-Здесь для службы __CryptoPro.Ra.Service__ на сервере Центра регистрации:
+Для службы __CryptoPro.Ra.Service__ на сервере Центра регистрации:
   - :white_check_mark: отредактировали строку подключения к базе данных Центра регистрации;
   - :white_check_mark: отключили шифрование для подключения к службе __Nats__;
   - :white_check_mark: указали в качестве адреса для подключения к службе __Nats__ имя хоста центра сертификации вместо __localhost__;
@@ -904,46 +528,7 @@ retry_files_enabled = False
   - :white_check_mark: указали уникальный NodeID для публикации сертификатов ЦС (требуется для работы в кластере);
   - :white_check_mark: ввели серийный номер и название компании.
 
-Плейбук [play/09.4.cprora-config-distros-set-parameters-raweb.yml](vagrant/ansible.ca/play/09.4.cprora-config-distros-set-parameters-raweb.yml) выполняет установку нужных параметров в файле __appsettings.json__ Веб-службы Центра регистрации:
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 09.4 >>> CPRORA | Set parameters for RAWEB appsettings.json.
-  hosts: cproraserver
-  become: true
-  tasks:
-    - name: CryptoPro RA. Edit RAWEB appsettings.json. Config "ConnectionString" parameter.
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.ss }}"
-        firstmatch: false  
-        line: '    "ConnectionString": "Server={{ item.server }};Database={{ item.database }};Username={{ item.username }};Pooling=True"'
-      loop:
-        - { backup: true, path: "{{ rawebbase }}/appsettings.json", ss: "Database=Ra", server: "{{ pg_address }}", database: "{{ cpra_db }}", username: "{{ cpra_dbadmin }}" }
-
-    - name: CryptoPro RA. Edit RAWEB appsettings.json. Config "Secure, Url, SN, Company" parameters
-      ansible.builtin.lineinfile:
-        backup: "{{ item.backup }}"
-        path: "{{ item.path }}"
-        search_string: "{{ item.search }}"
-        firstmatch: "{{ item.fm }}"
-        line: '{{ item.line }}'
-      loop:
-        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "localhost:5000", fm: false, line: '  "Urls": "http://{{ inventory_hostname }}:5000",' }
-        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "Secure", fm: true, line: '    "Secure": false, // включить TLS' }
-        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: '"Url":', fm: true, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
-        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "Secure", fm: false, line: '    "Secure": false, // включить TLS' }
-        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: '"Url":', fm: false, line: '    "Url": "nats://{{ ca_hostname }}:4222",' }
-        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "SerialNumber", fm: false, line: '    "SerialNumber": "{{ licra }}",' }
-        - { backup: false, path: "{{ rawebbase }}/appsettings.json", search: "Company", fm: false, line: '    "Company": "{{ company }}"' }
-
-```
-</details>
-
-Здесь для службы __CryptoPro.Ra.Web.Service__ на сервере Центра регистрации:
+И для службы __CryptoPro.Ra.Web.Service__ на сервере Центра регистрации:
   - :white_check_mark: отредактировали строку подключения к базе данных Центра регистрации;
   - :white_check_mark: изменили адрес для подключения к службе с _localhost_ на собственное имя хоста;
   - :white_check_mark: отключили шифрование для подключения к службе __Nats__;
