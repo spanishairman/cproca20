@@ -187,7 +187,7 @@ retry_files_enabled = False
 
 ### Копирование файлов установки на управляемые хосты
 Первым делом необходимо загрузить на управляемые машины дистрибутивы программных продуктов, а также, при необходимости, конфигурационные файлы, гамму для подключения ДСЧ КриптоПро исходный материал и прочее.
-Загрузка осуществляется с помощью плейбука [01.cproca-copy-distr.yml](vagrant/ansible.ca/play/01.cproca-copy-distr.yml)
+Загрузка осуществляется с помощью роли [01.copy-distro](vagrant/ansible.ca/roles/01.copy-distro), плейбук [01.cproca-copy-distr.yml](vagrant/ansible.ca/01.copy-distro.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -196,80 +196,25 @@ retry_files_enabled = False
 - name: <<< PLAYBOOK 01 >>> COPY DISTRO | Group of servers "caservers".
   hosts: cspservers
   become: false
-  tasks:
-  - name: COPY.
-    ansible.builtin.copy:
-      src: "{{ src_dirinst }}/"
-      dest: "{{ dst_dirinst }}"
-      owner: "{{ dst_user }}"
-      group: "{{ dst_user }}"
-      mode: '0644'
+  roles:
+    - 01.copy-distro
 ```
 </details>
 
 
 ### Установка КриптоПро CSP 5.0 R3
 
-Далее потребуется распаковать ранее загруженный дистрибутив КриптоПро CSP, запустить вложенный скрипт __install.sh__ с необходимым набором параметров (уровни кс{1,2} и набор компонентов), ввести лицензии, добавить гамму и перезапустить службу cprocsp. Все эти шаги выполняет плейбук [02.install-csp.yml](vagrant/ansible.ca/play/02.install-csp.yml)
+Далее потребуется распаковать ранее загруженный дистрибутив КриптоПро CSP, запустить вложенный скрипт __install.sh__ с необходимым набором параметров (уровни кс{1,2} и набор компонентов), ввести лицензии, добавить гамму и перезапустить службу cprocsp. 
+Все эти шаги выполняет плейбук [02.install-csp.yml](vagrant/ansible.ca/02.cprocsp-install.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
-- name: <<< PLAYBOOK 02 >>> INSTALL CSP | Extract Archive.
+- name: <<< PLAYBOOK 02 >>> INSTALL CSP | Extract Archive. Install distributives CryptoPro CSP. Setup Licenses for CSP. Install Gamma.
   hosts: cspservers
-  tasks:
-    - name: INSTALL CSP. Extract Archive.
-      ansible.builtin.shell: |
-        test -d "{{ dircsp }}" || mkdir $_
-        tar -C "{{ dircsp }}" -xvzf {{ csp_distro }} --strip-components 1
-      args:
-        executable: /bin/bash
-        chdir: "{{ dst_dirinst }}/"
-      tags:
-      - extract
-
-- name: <<< PLAYBOOK 02 >>> INSTALL CSP | Install distributives CryptoPro CSP. Setup Licenses for CSP. Install Gamma.
-  hosts: cspservers
-  become: true
-  tasks:
-    - name: INSTALL CSP. Install Software CryptoPro CSP, lsb-cprocsp-devel, cprocsp-pki-cades.
-      ansible.builtin.shell: |
-        ./install.sh kc1 lsb-cprocsp-devel cprocsp-pki-cades
-      args:
-        executable: /bin/bash
-        chdir: "{{ dst_dirinst }}/{{ dircsp }}/"
-      tags:
-      - install
-
-    - name: CONFIGURE CSP. Setup Licenses for CSP.
-      ansible.builtin.shell: |
-        sbin/amd64/cpconfig -license -set "{{ liccsp }}"
-      args:
-        executable: /bin/bash
-        chdir: "{{ cspbase }}"
-      tags:
-      - license
-
-    - name: CONFIGURE CSP. Add Gamma.
-      ansible.builtin.shell: |
-        cp "{{ dst_dirinst }}"/Gamma/db1/kis_1 /var/opt/cprocsp/dsrf/db1/
-        cp "{{ dst_dirinst }}"/Gamma/db2/kis_1 /var/opt/cprocsp/dsrf/db2/
-        chmod -R 777 "/var/opt/cprocsp/dsrf/"
-        "{{ cspsbindir }}"/cpconfig -hardware rndm -add cpsd -name 'cpsd rng' -level 3
-        "{{ cspsbindir }}"/cpconfig -hardware rndm -configure cpsd -add string /db1/kis_1 /var/opt/cprocsp/dsrf/db1/kis_1
-        "{{ cspsbindir }}"/cpconfig -hardware rndm -configure cpsd -add string /db2/kis_1 /var/opt/cprocsp/dsrf/db2/kis_1
-      args:
-        executable: /bin/bash
-      tags:
-      - gamma
-
-    - name: CONFIGURE CSP. Restart service cprocsp.
-      ansible.builtin.service:
-        name: cprocsp.service
-        state: restarted
-      tags:
-      - restart
+  roles:
+    - 02.cprocsp-install
 
 ```
 </details>
