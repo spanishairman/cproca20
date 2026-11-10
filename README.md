@@ -544,7 +544,7 @@ retry_files_enabled = False
 
 Назначаем владелца - учетную запись службы Центра сертификации или службы Центра регистрации в зависимости от роли, выполняемой виртуальной машиной.
 
-Плейбук [play/10.create-folders.yml](vagrant/ansible.ca/play/10.create-folders.yml):
+Плейбук [10.create-folders.yml](vagrant/ansible.ca/10.create-folders.yml):
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -553,30 +553,14 @@ retry_files_enabled = False
 - name: <<< PLAYBOOK 10 >>> CPROCA. CREATE FOLDERS SET OWNS | Create a messages store dir for nats-streaming-server. Create directories.
   hosts: cprocaserver
   become: true
-  tasks:
-    - name: CREATE FOLDERS SET OWNS. Create a messages, certificates store dirs for nats-streaming-server, log store dir for ca-server
-      ansible.builtin.file:
-        path: "{{ item.path }}"
-        state: directory
-        owner: "{{ item.ownname }}"
-      loop:
-        - { path: "{{ natslib }}/pkica-store", ownname: "{{ cpca_srv_acc }}" }
-        - { path: "{{ natsbase }}/ssl", ownname: "{{ cpca_srv_acc }}" }
-        - { path: "{{ calog }}", ownname: "{{ cpca_srv_acc }}" }
+  roles:
+    - 10.create-folders-ca
 
 - name: <<< PLAYBOOK 09 >>> CPRORA. CREATE FOLDERS SET OWNS | Create directories
   hosts: cproraserver
   become: true
-  tasks:
-    - name: CREATE FOLDERS SET OWNS. Create a crl, crt, log store dirs for ra-server
-      ansible.builtin.file:
-        path: "{{ item.path }}"
-        state: directory
-        owner: "{{ item.ownname }}"
-      loop:
-        - { path: "{{ cdpstore }}", ownname: "{{ cpra_srv_acc }}" }
-        - { path: "{{ aiastore }}", ownname: "{{ cpra_srv_acc }}" }
-        - { path: "{{ calog }}", ownname: "{{ cpra_srv_acc }}" }
+  roles:
+    - 10.create-folders-ra
 
 ```
 </details> 
@@ -595,7 +579,7 @@ retry_files_enabled = False
 Для всех созданных каталогов задаются владелец и разрешения. 
 
 ### Postgresql. Создание служебных баз данных с помощью утилиты _pkica_
-Служебные базы данных Центра сертификации, Центра регистрации и Реестра сертификатов создаются при помощи утилиты _pkica_. Плейбук [play/11.cproca-create-db.yml](vagrant/ansible.ca/play/11.cproca-create-db.yml).
+Служебные базы данных Центра сертификации, Центра регистрации и Реестра сертификатов создаются при помощи утилиты _pkica_. Плейбук [11.create-dbs.yml](vagrant/ansible.ca/11.create-dbs.yml).
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -605,29 +589,15 @@ retry_files_enabled = False
   hosts: cprocaserver
   become: true
   become_user: "{{ cpca_srv_acc }}"
-  tasks:
-    - name: CryptoPro CA. Create databases for CA service
-      ansible.builtin.shell: |
-        yes | ./"{{ pkicabin }}" {{ item.db }} db new
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-      loop:
-        - { db: ca }
-        - { db: cert-registry }
+  roles:
+    - 11.create-dbs-ca
 
 - name: <<< PLAYBOOK 11 >>> CPRORA | Create databases for RA service.
   hosts: cproraserver
   become: true
   become_user: "{{ cpra_srv_acc }}"
-  tasks:
-    - name: CryptoPro RA. Create database for RA service
-      ansible.builtin.shell: |
-        yes | ./"{{ pkicabin }}" ra db new
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-
+  roles:
+    - 11.create-dbs-ra
 ```
 </details>
 
@@ -641,69 +611,24 @@ retry_files_enabled = False
 
 ### Создание файлов служб и их регистрация
 #### Создание файлов служб CryptoPro.Ca.Service, nats-streaming-server, CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
-Для создания файлов _.service_ на удалённых хостах будем использовать шаблоны _jinja2_. Плейбук для создания файлов и их копирования на удалённые серверы [play/12.services-creation.yml](vagrant/ansible.ca/play/12.services-creation.yml): 
+Для создания файлов _.service_ на удалённых хостах будем использовать шаблоны _jinja2_. 
+Плейбук для создания файлов и их копирования на удалённые серверы [12.create-services.yml](vagrant/ansible.ca/12.create-services.yml): 
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
 - name: <<< PLAYBOOK 12 >>> REGISTRATION OF SERVICES | Server cpcaserver, services CryptoPro.Ca.Service, Nats-Streaming-Server
-  hosts: cprocaserver
+  hosts: cproca
   become: true
-  tasks:
-    - name: REGISTRATION OF SERVICE CryptoPro.Ca.Service. Copy Template
-      vars:
-        description: 'CryptoPro.Ca.Service'
-        folder: 'CryptoPro.Ca.Service'
-        service: 'CryptoPro.Ca.Service'
-        identifier: 'cryptopro-ca-service'
-        owner: 'cpca-srv'
-        key: ''
-      ansible.builtin.template:
-        src: services.j2
-        dest: /etc/systemd/system/cryptopro.ca.service
-
-    - name: REGISTRATION OF SERVICE Nats-Streaming-Server. Copy Template
-      vars:
-        description: 'nats-streaming-server'
-        folder: 'nats-streaming'
-        service: 'nats-streaming-server'
-        identifier: 'nats-streaming-server'
-        owner: 'cpca-srv'
-        key: '-sc /opt/cpca/nats-streaming/nats.no-tls.conf'
-      ansible.builtin.template:
-        src: services.j2
-        dest: /etc/systemd/system/nats-streaming-server.service
-
+  roles:
+    - 12.create-services-ca
 
 - name: <<< PLAYBOOK 12 >>> REGISTRATION OF SERVICES | Server cpraserver, services CryptoPro.Ra.Service, CryptoPro.Ra.Web.Service
   hosts: cproraserver
   become: true
-  tasks:
-    - name: REGISTRATION OF SERVICE CryptoPro.Ra.Service. Copy Template
-      vars:
-        description: 'CryptoPro.Ra.Service'
-        folder: 'CryptoPro.Ra.Service'
-        service: 'CryptoPro.Ra.Service'
-        identifier: 'cryptopro-ra-service'
-        owner: 'cpra-srv'
-        key: ''
-      ansible.builtin.template:
-        src: services.j2
-        dest: /etc/systemd/system/cryptopro.ra.service
-
-    - name: REGISTRATION OF SERVICE CryptoPro.Ra.Web.Service. Copy Template
-      vars:
-        description: 'CryptoPro.Ra.Web.Service'
-        folder: 'CryptoPro.Ra.Web'
-        service: 'CryptoPro.Ra.Web'
-        identifier: 'cryptopro-ra-web-service'
-        owner: 'cpra-srv'
-        key: ''
-      ansible.builtin.template:
-        src: services.j2
-        dest: /etc/systemd/system/cryptopro.ra.web.service
-
+  roles:
+    - 12.create-services-ra
 ```
 </details>
 
@@ -715,7 +640,7 @@ retry_files_enabled = False
   - :white_check_mark: _cryptopro.ra.service_;
   - :white_check_mark: _cryptopro.ra.web.service_.
 
-Шаблон для создания файлов служб [play/templates/services.j2](vagrant/ansible.ca/play/templates/services.j2):
+Шаблон для создания файлов служб [services.j2](vagrant/ansible.ca/roles/12.create-services-ca/templates/services.j2):
 
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
@@ -738,88 +663,22 @@ WantedBy=multi-user.target
 ```
 </details>
 
-#### Регистрация служб _cryptopro.ca.service_, _nats-streaming-server.service_, _cryptopro.ra.service_, _cryptopro.ra.web.service_
-
-Плейбук [play/13.services-registration.yml](vagrant/ansible.ca/play/13.services-registration.yml):
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 13 >>> REGISTRATION OF SERVICES | Server cproca
-  hosts: cproca
-  become: true
-  tasks:
-    - name: Force systemd to reread configs
-      ansible.builtin.systemd_service:
-        daemon_reload: true
-
-    - name: REGISTRATION OF SERVICES. Enable and start services
-      ansible.builtin.service:
-        name: "{{ item.name }}"
-        enabled: true
-        state: started
-      loop:
-        - { name: cryptopro.ca.service }
-        - { name: nats-streaming-server.service }
-
-- name: <<< PLAYBOOK 13 >>> REGISTRATION OF SERVICES | Server cprora
-  hosts: cproraserver
-  become: true
-  tasks:
-    - name: Force systemd to reread configs
-      ansible.builtin.systemd_service:
-        daemon_reload: true
-
-    - name: REGISTRATION OF SERVICES. Enable and start services
-      ansible.builtin.service:
-        name: "{{ item.name }}"
-        enabled: true
-        state: started
-      loop:
-        - { name: cryptopro.ra.service }
-        - { name: cryptopro.ra.web.service }
-```
-</details>
-
-Здесь мы на сервере Центра сертификации, зарегистрировали и запустили службы:
-  - :white_check_mark: _cryptopro.ca.service_;
-  - :white_check_mark: _nats-streaming-server.service_.
-
-На сервере Центра регистрации так же зарегистрировали и запустили две службы:
-  - :white_check_mark: _cryptopro.ra.service_;
-  - :white_check_mark: _cryptopro.ra.web.service_.
-
 ### Создание экземпляра Центра сертификации и загрузка шаблонов по умолчанию
 
 Теперь нужно создать новый экземпляр Центра сертификации с именем "Тестовый Удостоверяющий Центр АО GAMMA-TRADE".
-Для этого используется плейбук [play/14.cproca-create-instance-load-tpls.yml](vagrant/ansible.ca/play/14.cproca-create-instance-load-tpls.yml):
+Для этого используется плейбук [13.create-ca-instance.yml](vagrant/ansible.ca/13.create-ca-instance.yml):
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
-- name: <<< PLAYBOOK 14 >>> CPROCA | Create CA instance. Load Templates
+- name: <<< PLAYBOOK 13 >>> CPROCA | Create CA instance. Load Templates
   hosts: cprocaserver
   become: true
   become_user: "{{ cpca_srv_acc }}"
-  tasks:
-    - name: CryptoPro CA. Create CA instance
-      ansible.builtin.shell: |
-        ./"{{ pkicabin }}" ca authority new --name "{{ caname }}"
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
+  roles:
+    - 13.create-ca-instance
 
-    - name: CryptoPro CA. Add templates
-      ansible.builtin.shell: |
-        ./"{{ pkicabin }}" ca template add --default-template "{{ item.template }}"
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-      loop:
-        - { template: Tls }
-        - { template: User }
 ```
 </details>
 
@@ -828,45 +687,18 @@ WantedBy=multi-user.target
   - :white_check_mark: User - сертификат пользователя.
 
 ### Выпуск и установка самоподписанного сертификата
-Плейбук [play/15.cproca-release-install-ca-cert.yml](vagrant/ansible.ca/play/15.cproca-release-install-ca-cert.yml):
+Плейбук [14.release-ca-certificate.yml](vagrant/ansible.ca/14.release-ca-certificate.yml):
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
-- name: <<< PLAYBOOK 15 >>> CPROCA | Release, Install, Add a new CA certificate
+- name: <<< PLAYBOOK 14 >>> CPROCA | Release, Install, Add a new CA certificate
   hosts: cprocaserver
   become: true
   become_user: "{{ cpca_srv_acc }}"
-  tasks:
-    - name: CPROCA. Release a new CA certificate
-      ansible.builtin.shell: |
-        ./"{{ pkicabin }}" ca new-root-cert --out-file ~/{{ cacert }}.crt --key-index 0 --subject "CN={{ caname }};O={{ orgname }};C=RU" --container-name {{ cacont }} --no-pin --silent
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-      tags:
-        - release
-
-    - name: CPROCA. Install CA certificates to storages
-      ansible.builtin.shell: |
-        ./certmgr -install -store uMy -file ~/"{{ cacert }}.crt" -provtype 80 -container "{{ cacont }}" -at_signature
-        yes o | ./certmgr -install -store uRoot -file ~/"{{ cacert }}.crt"
-      args:
-        executable: /bin/bash
-        chdir: "{{ cspbindir }}"
-      tags:
-        - install
-
-    - name: CPROCA. Add CA key
-      ansible.builtin.shell: |
-        export PATH=$PATH:"{{ cspbindir }}"
-        ./"{{ pkicabin }}" ca signing-key add --name "{{ caname }}" --thumbprint $(certmgr -list -file ~/"{{ cacert }}.crt" | grep SHA1 | awk '{print $4}') --store-name My --store-location CurrentUser --no-pin
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-      tags:
-        - export
+  roles:
+    - 14.release-ca-certificate
 ```
 </details>
 
@@ -878,55 +710,16 @@ WantedBy=multi-user.target
 
 ### Изменение настроек Центра сертификации
 В этой главе нам нужно задать расписние выпуска списков отзыва, экспортировать настройки в текстовый файл в формате _json_, отредактировать в нём часть параметров и импортировать новые настройки из этого файла.
-Плейбук [play/16.cproca-configure-ca.yml](vagrant/ansible.ca/play/16.cproca-configure-ca.yml):
+Плейбук [15.config-ca-instance.yml](vagrant/ansible.ca/15.config-ca-instance.yml):
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
-- name: <<< PLAYBOOK 16 >>> CPROCA | Configure CA and CA Shedule
+- name: <<< PLAYBOOK 15 >>> CPROCA | Configure CA and CA Shedule
   hosts: cprocaserver
-  become: true
-  become_user: "{{ cpca_srv_acc }}"
-  tasks:
-    - name: CryptoPro CA. Configure Settings for CA and CA Shedule. Sheduling and Export
-      ansible.builtin.shell: |
-        ./"{{ pkicabin }}" ca crl schedule update --name "{{ caname }}" --base "0 0 18 * * *" --delta -
-        ./"{{ pkicabin }}" ca authority export-settings --name "{{ caname }}" --file ~/"{{ casettings }}" --format Json
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-      tags: export
-
-    - name: CryptoPro CA. Configure Settings for CA and CA Shedule. Edit
-      ansible.builtin.lineinfile:
-        path: ~/{{ casettings }}
-        backup: "{{ item.backup }}"
-        search_string: "{{ item.ss }}"
-        line: "{{ item.line }}"
-      loop:
-        - { backup: true, ss: "DisableAkiIssuerNameAndSerial", line: '"DisableAkiIssuerNameAndSerial": true,' }
-        - { backup: false, ss: "QualifiedCertMode", line: '"QualifiedCertMode": "AttrFormat",' }
-        - { backup: false, ss: "AutoLoadKey", line: '"AutoLoadKey": true,' }
-        - { backup: false, ss: "CrlPublicationUrls", line: '"CrlPublicationUrls": [ { "Usage": "CdpIncludeInCert", "Urls": [ "http://{{ ra_hostname }}/cdp/%17.crl" ] } ],' }
-        - { backup: false, ss: "CaCertPublicationUrls", line: '"CaCertPublicationUrls": [ { "Usage": "AiaIncludeInCert", "Url": "http://{{ ra_hostname }}/aia/{{ cacert }}" } ],' }
-
-    - name: CryptoPro CA. Configure Settings for CA and CA Shedule. Import
-      ansible.builtin.shell: |
-        ./"{{ pkicabin }}" ca authority import-settings --name "{{ caname }}" --file ~/"{{ casettings }}" --format Json
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-
-- name: <<< PLAYBOOK 16 >>> CPROCA | Restart CA
-  hosts: cprocaserver
-  become: true
-  tasks:
-    - name: CryptoPro CA. Restart service.
-      ansible.builtin.service:
-        name: cryptopro.ca.service
-        state: restarted
-
+  roles:
+    - 15.config-ca-instance
 ```
 </details>
 
@@ -942,7 +735,7 @@ WantedBy=multi-user.target
   - :white_check_mark: импортировали новые настройки из файла в Центр сертификации;
   - :white_check_mark: перезапустили службу ЦС для применения новых параметров.
 
-### Создание запросов на выпуск сертификатов на Центре Регистрации
+### Создание запросов, выпуск и установка сертификатов
 
 На сервере Центра Регистрации выполняются запросы на выпуск сертификатов для:
   - Сервер Центра Регистрации;
@@ -951,41 +744,38 @@ WantedBy=multi-user.target
   - Оператор (TLS);
   - Оператор (Sign).
 
-Плейбук [play/17.cprora-certs-req.yml](vagrant/ansible.ca/play/17.cprora-certs-req.yml):
-<details>
+На Центре Сертификации создаются запросы на выпуск сертификатов для:
+  - Nats-Server - для работы серверной части службы очередей _Nats_;
+  - Nats-Client - для клиентского подключения к серверной части службы очередей _Nats_ со стороны её клиентской части;
+  - PKICA-Client - для подключения к службе очередей _Nats_ со стороны утилиты _Pkica_;
+  - CA-Client - для подключения к службе очередей со стороны службы _Cryptopro.Ca_.
+
+Плейбук [16.certs-req-issue-inst.yml](vagrant/ansible.ca/16.certs-req-issue-inst.yml):
+details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
-- name: <<< PLAYBOOK 17 >>> CPRORA | Creating a Certificate Issue Request for RA Server, RA Client, RA Web Client
+- name: <<< PLAYBOOK 16 >>> CPRORA | Creating a Certificate Issue Request for RA Server, RA Client, RA Web Client
   hosts: cproraserver
   become: true
   become_user: "{{ cpra_srv_acc }}"
-  tasks:
-    - name: CPORA. Creating a Certificate Issue Request for RA Server, RA Client, RA Web Client
-      ansible.builtin.shell: |
-        test -f {{ item.file }} && ./"{{ pkicabin }}" ca new-cert-req --subject "{{ item.subject }}" --key-spec KeyExchange --container-name {{ item.container }} --template {{ item.template }} --out-file {{ item.file }} {{ item.additional }} --use-existing-key
-        test -f {{ item.file }} || ./"{{ pkicabin }}" ca new-cert-req --subject "{{ item.subject }}" --key-spec KeyExchange --container-name {{ item.container }} --template {{ item.template }} --out-file {{ item.file }} {{ item.additional }}
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-      loop:
-        - { subject: "CN={{ inventory_hostname }}, C=RU, 1.2.643.2.2.44.5={{ inventory_hostname }}", container: "{{ crt_ra_srv }}_cont", template: "{{ tpl_tlssrv }}", file: "{{ ansible_user_dir }}/{{ crt_ra_srv }}.req" , additional: "--no-pin --exportable" }
-        - { subject: "CN=ra, C=RU", container: "{{ crt_ra_clnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ra_clnt }}.req" , additional: "--no-pin --exportable" }
-        - { subject: "CN=ra, C=RU", container: "{{ crt_ra_webclnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ra_webclnt }}.req" , additional: "--no-pin --exportable" }
-        - { subject: "CN=pkica, C=RU", container: "{{ crt_ra_pkicaclnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ra_pkicaclnt }}.req" , additional: "--no-pin --exportable" }
+  roles:
+    - 16.cprora-certs-req
 
-    - name: CryptoPro RA. Creating a Certificate Issue Request for RA Operator TLS, RA Operator Sign
-      ansible.builtin.shell: |
-        test -f {{ item.file }} && ./"{{ pkicabin }}" ca new-cert-req --subject "{{ item.subject }}" --key-spec KeyExchange --container-name {{ item.container }} --template {{ item.template }} --out-file {{ item.file }} {{ item.additional }} --use-existing-key
-        test -f {{ item.file }} || ./"{{ pkicabin }}" ca new-cert-req --subject "{{ item.subject }}" --key-spec KeyExchange --container-name {{ item.container }} --template {{ item.template }} --out-file {{ item.file }} {{ item.additional }}
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-      loop:
-        - { subject: "CN={{ crt_opertls }}, C=RU", container: "{{ crt_opertls }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_opertls }}.req" , additional: "--no-pin --exportable" }
-        - { subject: "CN={{ crt_opersign }}, C=RU", container: "{{ crt_opersign }}_cont", template: "{{ tpl_oper }}", file: "{{ ansible_user_dir }}/{{ crt_opersign }}.req" , additional: "--no-pin --exportable" }
+- name: <<< PLAYBOOK 16 >>> CPROCA | Upload from RA, creating a Certificate Issue Request for NATS Server, NATS Client, PKICA Client, CA Client. Issue a certificates, and fetch certs for RA
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  roles:
+    - 16.cprora-reqs-up
+    - 16.cproca-certs-req
+    - 16.cproca-certs-issue
 
+- name: <<< PLAYBOOK 16 >>> UP CERIFICATES | Upload certificates to RA.
+  hosts: cproraserver
+  roles:
+    - 16.cprora-certs-up
 ```
 </details>
 
@@ -998,104 +788,14 @@ WantedBy=multi-user.target
   - :white_check_mark: оператора Центра регистрации для создания защищённого подключения с использованием шаблона __"1.2.643.2.2.46.0.6"__;
   - :white_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов с использованием шаблона __"1.2.643.2.2.46.0.8"__.
 
-### Создание запросов на выпуск сертификатов на Центре Сертификации
-
-На Центре Сертификации создаются запросы на выпуск сертификатов для:
-  - Nats-Server - для работы серверной части службы очередей _Nats_;
-  - Nats-Client - для клиентского подключения к серверной части службы очередей _Nats_ со стороны её клиентской части;
-  - PKICA-Client - для подключения к службе очередей _Nats_ со стороны утилиты _Pkica_;
-  - CA-Client - для подключения к службе очередей со стороны службы _Cryptopro.Ca_.
-
-Плейбук [play/18.cproca-certs-req.yml](vagrant/ansible.ca/play/18.cproca-certs-req.yml):
-
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 18 >>> CPROCA | Creating a Certificate Issue Request for NATS Server, NATS Client, PKICA Client, CA Client
-  hosts: cprocaserver
-  become: true
-  become_user: "{{ cpca_srv_acc }}"
-  tasks:
-    - name: CPORA. Creating a Certificate Issue Request for NATS Server, NATS Client, PKICA Client, CA Client
-      ansible.builtin.shell: |
-        test -f {{ item.file }} && ./{{ pkicabin }} ca new-cert-req --subject "{{ item.subject }}" --key-spec "KeyExchange" --container-name {{ item.container }} --template "{{ item.template }}" --out-file {{ item.file }} {{ item.additional }} --use-existing-key
-        test -f {{ item.file }} || ./{{ pkicabin }} ca new-cert-req --subject "{{ item.subject }}" --key-spec "KeyExchange" --container-name {{ item.container }} --template "{{ item.template }}" --out-file {{ item.file }} {{ item.additional }}
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-      loop:
-        - { subject: "CN={{ inventory_hostname }}, C=RU, 1.2.643.2.2.44.5={{ inventory_hostname }}.{{ ca_domain }}", container: "{{ crt_ca_natssrv }}_cont", template: "{{ tpl_tlssrv }}", file: "{{ ansible_user_dir }}/{{ crt_ca_natssrv }}.req" , additional: "--no-pin --exportable" }
-        - { subject: "CN=nats, C=RU", container: "{{ crt_ca_natsclnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ca_natsclnt }}.req" , additional: "--no-pin --exportable" }
-        - { subject: "CN=pkica, C=RU", container: "{{ crt_ca_pkicaclnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ca_pkicaclnt }}.req" , additional: "--no-pin --exportable" }
-        - { subject: "CN=ca, C=RU", container: "{{ crt_ca_caclnt }}_cont", template: "{{ tpl_tlsclnt }}", file: "{{ ansible_user_dir }}/{{ crt_ca_caclnt }}.req" , additional: "--no-pin --exportable" }
-
-```
-</details>
-
-В данном примере на сервере Центра регистрации были выполнены запросы на выпуск сертификатов для:
+На сервере Центра регистрации были выполнены запросы на выпуск сертификатов для:
 
   - :white_check_mark: серверной части службы очередей _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.3"__;
   - :white_check_mark: клиентской части службы очередей _Nats_ для подключения к её серверной компоненте с использованием шаблона __"1.2.643.2.2.46.0.6"__;
   - :white_check_mark: утилиты _Pkica_ Центра сертификации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
   - :white_check_mark: службы Центра сертификации для подключения к _Nats_ с использованием шаблона __"1.2.643.2.2.46.0.6"__;
 
-### Копирование полученных запросов на выпуск сертификатов с ЦР на ЦС
-Для передачи запросов на выпуск сертификатов задействуется управляющая машина. Таким образом, файлы запросов сначала скачиваются на хост управления с Центра Регистрации, 
-затем загружаются с него на Центр Сертификации. С помощью плейбука [play/19.cprora-reqs-fetch.yml](vagrant/ansible.ca/play/19.cprora-reqs-fetch.yml) скопируем все ранее созданные запросы 
-на хост управления в каталог _share_:
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 19 >>> FETCH REQUESTS | Download requests for certificates from RA.
-  hosts: cproraserver
-  become: true
-  become_user: "{{ cpra_srv_acc }}"
-  tasks:
-    - name: FETCH.
-      ansible.builtin.fetch:
-        src: "{{ ansible_user_dir }}/{{ item.file }}.req"
-        dest: "{{ localdir }}/share/"
-        flat: 'true'
-      loop:
-        - { file: "{{ crt_ra_srv }}" }
-        - { file: "{{ crt_ra_clnt }}" }
-        - { file: "{{ crt_ra_webclnt }}" }
-        - { file: "{{ crt_ra_pkicaclnt }}" }
-        - { file: "{{ crt_opertls }}" }
-        - { file: "{{ crt_opersign }}" }
-```
-</details>
-
-Затем загрузим запросы из каталога _share_ на Центр сертификации. Плейбук [play/20.cproca-reqs-up.yml](vagrant/ansible.ca/play/20.cproca-reqs-up.yml):
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
- 
-```
----
-- name: <<< PLAYBOOK 20 >>> UP REQUESTS | Upload requests for certificates to CA.
-  hosts: cprocaserver
-  become: true
-  become_user: "{{ cpca_srv_acc }}"
-  tasks:
-    - name: UP.
-      ansible.builtin.copy:
-        src: "{{ localdir }}/share/{{ item.file }}.req"
-        dest: "{{ ansible_user_dir }}/{{ item.file }}.req"
-      loop:
-        - { file: "{{ crt_ra_srv }}" }
-        - { file: "{{ crt_ra_clnt }}" }
-        - { file: "{{ crt_ra_webclnt }}" }
-        - { file: "{{ crt_ra_pkicaclnt }}" }
-        - { file: "{{ crt_opertls }}" }
-        - { file: "{{ crt_opersign }}" }
-```
-</details>
-
-В данном разделе мы скачали на управляющий хост в каталог _share_ с Центра регистрации, а затем загрузили на Центр сертификации следующие запросы на выпуск сертификатов:
+Затем мы скачали на управляющий хост в каталог _share_ с Центра регистрации и загрузили на Центр сертификации следующие запросы на выпуск сертификатов:
 
   - :white_check_mark: веб сервера Центра регистрации;
   - :white_check_mark: службы Центра регистрации для подключения к _Nats_;
@@ -1104,41 +804,7 @@ WantedBy=multi-user.target
   - :white_check_mark: оператора Центра регистрации для создания защищённого подключения;
   - :white_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов.
 
-### Выпуск сертификатов на основе всех ранее созданных запросов
-
-После того как все запросы на выпуск сертификатов были размещены в домашней директори учетной записи _cpca-srv_ Центра сертификации, можно выпустить целевые сертификаты. Для этого используем плейбук 
-[play/21.cproca-certs-issue.yml](vagrant/ansible.ca/play/21.cproca-certs-issue.yml):
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 21 >>> ISSUE OF CERTS | Issue a certificates.
-  hosts: cprocaserver
-  become: true
-  become_user: "{{ cpca_srv_acc }}"
-  tasks:
-    - name: ISSUE OF CERTS
-      ansible.builtin.shell: |
-        test -f {{ ansible_user_dir }}/{{ item }}.cer || ./{{ pkicabin }} ca issue-cert --file {{ ansible_user_dir }}/{{ item }}.req --out-file {{ ansible_user_dir }}/{{ item }}.cer --name "{{ caname }}"
-      args:
-        executable: /bin/bash
-        chdir: "{{ pkicabase }}"
-      loop:
-        - "{{ crt_ca_natsclnt }}"
-        - "{{ crt_ca_natssrv }}"
-        - "{{ crt_ca_pkicaclnt }}"
-        - "{{ crt_ca_caclnt }}"
-        - "{{ crt_ra_srv }}"
-        - "{{ crt_ra_clnt }}"
-        - "{{ crt_ra_webclnt }}"
-        - "{{ crt_ra_pkicaclnt }}"
-        - "{{ crt_opertls }}"
-        - "{{ crt_opersign }}"
-```
-</details>
-
-Здесь мы выпустили сертификаты на основе запросов, созданных на:
+Выпустили сертификаты на основе запросов, созданных на:
   - :white_check_mark: Центре сертификации для:
     - :heavy_check_mark: клиентской части службы очередей _Nats_;
     - :heavy_check_mark: серверной части службы очередей _Nats_;
@@ -1152,147 +818,7 @@ WantedBy=multi-user.target
     - :heavy_check_mark: оператора Центра регистрации для создания защищённого подключения;
     - :heavy_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов.
 
-Теперь сертификаты, котрые были выпущены для _Центра регистрации_, необходио будет скопировать обратно на сервер ЦР.
-
-### Копирование выпущенных сертификатов с ЦС на ЦР
-
-Для передачи сертификатов с _Центра Сертификации_ на _Центр Регистрации_ задействуется управляющая машина. Таким образом, файлы сертификатов сначала скачиваются 
-на хост управления с _Центра Сертификации_, затем загружаются с него на _Центр Регистрации_.
-Для этого задействуем дла плейбука, [play/22.cproca-certs-fetch.yml](vagrant/ansible.ca/play/22.cproca-certs-fetch.yml):
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 22 >>> FETCH CERTS | Download certificates from CA.
-  hosts: cprocaserver
-  become: true
-  become_user: "{{ cpca_srv_acc }}"
-  tasks:
-    - name: FETCH.
-      ansible.builtin.fetch:
-        src: "{{ ansible_user_dir }}/{{ item }}.cer"
-        dest: "{{ localdir }}/share/"
-        flat: 'true'
-      loop:
-        - "{{ crt_ra_srv }}"
-        - "{{ crt_ra_clnt }}"
-        - "{{ crt_ra_webclnt }}"
-        - "{{ crt_ra_pkicaclnt }}"
-        - "{{ crt_opertls }}"
-        - "{{ crt_opersign }}"
-        - "{{ cacert }}"
-```
-</details>
-
-и [play/23.cprora-certs-up.yml](vagrant/ansible.ca/play/23.cprora-certs-up.yml):
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 23 >>> UP CERIFICATES | Upload certificates to RA.
-  hosts: cproraserver
-  become: true
-  become_user: "{{ cpra_srv_acc }}"
-  tasks:
-    - name: UP.
-      ansible.builtin.copy:
-        src: "{{ localdir }}/share/{{ item }}.cer"
-        dest: "{{ ansible_user_dir }}/{{ item }}.cer"
-      loop:
-        - "{{ crt_ra_srv }}"
-        - "{{ crt_ra_clnt }}"
-        - "{{ crt_ra_webclnt }}"
-        - "{{ crt_ra_pkicaclnt }}"
-        - "{{ crt_opertls }}"
-        - "{{ crt_opersign }}"
-        - "{{ cacert }}"
-```
-</details>
-
-### Установка сертификатов на серверах Центра Сертификации и Центра Регистрации
-
-Установка сертификатов в хранилище с привязкой к закрытому ключу для учетных записей, с правами которых работают службы. 
-На Центре сертификации - плейбук [play/24.cproca-certs-install.yml](vagrant/ansible.ca/play/24.cproca-certs-install.yml):
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 24 >>> INSTALL | Install certificates on a Certifications Authority.
-  hosts: cprocaserver
-  become: true
-  become_user: "{{ cpca_srv_acc }}"
-  tasks:
-    - name: INSTALL
-      ansible.builtin.shell: |
-        ./{{ cryptcpbin }} -instcert -from_request {{ ansible_user_dir }}/{{ item }}.cer
-      args:
-        executable: /bin/bash
-        chdir: "{{ cspbindir }}"
-      loop:
-        - "{{ crt_ca_natsclnt }}"
-        - "{{ crt_ca_natssrv }}"
-        - "{{ crt_ca_pkicaclnt }}"
-        - "{{ crt_ca_caclnt }}"
-```
-</details>
-
-На Центре регистрации - плейбук [play/25.cprora-certs-install.yml](vagrant/ansible.ca/play/25.cprora-certs-install.yml):
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 25 >>> INSTALL | Install certificates on a Registrations Authority.
-  hosts: cproraserver
-  become: true
-  become_user: "{{ cpra_srv_acc }}"
-  tasks:
-    - name: CPRORA. Install Cerificates to uMy
-      ansible.builtin.shell: |
-        ./{{ cryptcpbin }} -instcert -from_request {{ ansible_user_dir }}/{{ item }}.cer
-      args:
-        executable: /bin/bash
-        chdir: "{{ cspbindir }}"
-      loop:
-        - "{{ crt_ra_srv }}"
-        - "{{ crt_ra_clnt }}"
-        - "{{ crt_ra_webclnt }}"
-        - "{{ crt_ra_pkicaclnt }}"
-        - "{{ crt_opertls }}"
-        - "{{ crt_opersign }}"
-
-    - name: CPRORA. Export Cerificates to pfx
-      ansible.builtin.shell: |
-        export PATH=$PATH:{{ cspbindir }}
-        id=$(certmgr -list -file {{ ansible_user_dir }}/{{ item }}.cer | grep "SHA1" | awk '{print $4}')
-        certmgr -export -pfx -pin 11111111 -thumbprint $id -dest {{ ansible_user_dir }}/{{ item }}.pfx
-      args:
-        executable: /bin/bash
-      loop:
-        - "{{ crt_ra_srv }}"
-        - "{{ crt_opertls }}"
-        - "{{ crt_opersign }}"
-      tags: export
-
-- name: <<< PLAYBOOK 25 >>> INSTALL | Install rootca certificate on a Registrations Authority.
-  hosts: cproraserver
-  become: true
-  tasks:
-    - name: CPRORA. Install Cerificates to mRoot
-      ansible.builtin.shell: |
-        # export PATH=$PATH:"{{ cspbindir }}"
-        yes o | ./certmgr -install -store mRoot -file /home/{{ cpra_srv_acc }}/{{ cacert }}.cer
-      args:
-        executable: /bin/bash
-        chdir: "{{ cspbindir }}"
-
-```
-</details>
-
-Здесь мы установили сертификаты на:
+Установили сертификаты на:
   - :white_check_mark: Центре сертификации:
     - :heavy_check_mark: клиентской части службы очередей _Nats_;
     - :heavy_check_mark: серверной части службы очередей _Nats_;
@@ -1304,95 +830,35 @@ WantedBy=multi-user.target
     - :heavy_check_mark: веб службы Центра регистрации для подключения к _Nats_;
     - :heavy_check_mark: утилиты _pkica_ Центра регистрации для подключения к _Nats_;
     - :heavy_check_mark: оператора Центра регистрации для создания защищённого подключения;
-    - :heavy_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов.
-    - :heavy_check_mark: корневой сертификат Центра сертификации
+    - :heavy_check_mark: оператора Центра регистрации для подписания запросов на выпуск сертификатов;
+    - :heavy_check_mark: корневой сертификат Центра сертификации.
 
-Также, на Центре регистрации, мы экспортировали сертификаты в формате pfx:
-  - :white_check_mark: веб сервера Центра регистрации - для установки в локальное хранилище пользователя _nginx_;
-  - :white_check_mark: оператора Центра регистрации (для создания защищённого подключения) для передачи и последующей установки на рабочую станцию оператора;
-  - :white_check_mark: оператора Центра регистрации (для подписания запросов на выпуск сертификатов) для передачи и последующей установки на рабочую станцию оператора;
+Также, на Центре регистрации, мы: 
+  - :white_check_mark: экспортировали сертификаты в формате pfx:
+    - :heavy_check_mark: веб сервера Центра регистрации - для установки в локальное хранилище пользователя _nginx_;
+    - :heavy_check_mark: оператора Центра регистрации (для создания защищённого подключения) для передачи и последующей установки на рабочую станцию оператора;
+    - :heavy_check_mark: оператора Центра регистрации (для подписания запросов на выпуск сертификатов) для передачи и последующей установки на рабочую станцию оператора;
+  - :white_check_mark: скачали на управляющий хост в каталог _share_ с Центра регистрации:
+    - :heavy_check_mark: pfx оператора Центра регистрации (для создания защищённого подключения);
+    - :heavy_check_mark: pfx оператора Центра регистрации (для подписания запросов на выпуск сертификатов).
 
 ### Копирование и установка сертификатов оператора на его рабочую станцию
 
-После того, как сертификаты оператора были экспортированиы из хранилища в файлы _pfx_, их необходимо скопировать на рабочую станцию и там установить в локальное хранилище учетной записи оператора,
-в данном случае это пользователь _Vagrant_.
+После того, как сертификаты оператора были экспортированиы из хранилища в файлы _pfx_, и скачаны на хост управления, их необходимо загрузить на рабочую станцию 
+и установить в локальное хранилище учетной записи оператора, в данном случае это пользователь _Vagrant_.
 
-Плейбук [play/26.cprora-pfxs-fetch.yml](vagrant/ansible.ca/play/26.cprora-pfxs-fetch.yml) - копирует файлы _pfx_ с _Центра регистрации_ на управляющую машину в каталог _share_:
+Плейбук [17.cprodesktop-pfx-install.yml](vagrant/ansible.ca/17.cprodesktop-pfx-install.yml) - копирует файлы _pfx_ с _Центра регистрации_ на управляющую машину в каталог _share_:
 
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 ---
-- name: <<< PLAYBOOK 26 >>> FETCH PFXs | Download keys from RA.
-  hosts: cproraserver
-  become: true
-  become_user: "{{ cpra_srv_acc }}"
-  tasks:
-    - name: FETCH.
-      ansible.builtin.fetch:
-        src: "{{ ansible_user_dir }}/{{ item }}.pfx"
-        dest: "{{ localdir }}/share/"
-        flat: 'true'
-      loop:
-        - "{{ crt_opertls }}"
-        - "{{ crt_opersign }}"
-```
-</details>
-
-Плейбук [play/27.cprodesktop-pfx-up.yml](vagrant/ansible.ca/play/27.cprodesktop-pfx-up.yml) - копирует файлы _pfx_ и корневой сертификат Центра сертификации с каталога _share_ управляющей машины на станцию оператора 
-в домашнюю директорию пользователя _Vagrant_:
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 27 >>> UP PFXs | Upload keys to Desktop.
+- name: <<< PLAYBOOK 17 >>> Install PFXs | Upload keys to Desktop.
   hosts: cprodesktopserver
-  become: false
-  tasks:
-    - name: UP.
-      ansible.builtin.copy:
-        src: "{{ localdir }}/share/{{ item }}"
-        dest: "{{ ansible_user_dir }}/{{ item }}"
-      loop:
-        - "{{ cacert }}.cer"
-        - "{{ crt_opertls }}.pfx"
-        - "{{ crt_opersign }}.pfx"
-```
-</details>
-
-Плейбук [play/28.cprodesktop-pfx-install.yml](vagrant/ansible.ca/play/28.cprodesktop-pfx-install.yml) - устанавливает сертификаты с привязкой к закрытому ключу в хранилище пользователя __uMy__, 
-а также корневой сертифкат в хранилище __uRoot__:
-<details>
-<summary>Клик, чтобы показать код :arrow_down_small:</summary>
-
-```
----
-- name: <<< PLAYBOOK 28 >>> CPRODesktop | Install a Certificate for Operator
-  hosts: cprodesktopserver
-  become: false
-  tasks:
-    - name: CryptoPro Desktop. Install a Certificates for Operator
-      ansible.builtin.shell: |
-        ./certmgr -install -pfx -store uMy -file "{{ ansible_user_dir }}/{{ item }}" -newpin '' -pin 11111111
-      args:
-        executable: /bin/bash
-        chdir: "{{ cspbindir }}"
-      loop:
-        - "{{ crt_opertls }}.pfx"
-        - "{{ crt_opersign }}.pfx"
-
-- name: <<< PLAYBOOK 28 >>> Install rootca certificate on a Desktop.
-  hosts: cprodesktopserver
-  become: false
-  tasks:
-    - name: CPRORA. Install Cerificates to uRoot
-      ansible.builtin.shell: |
-        yes o | ./certmgr -install -store uRoot -file "{{ ansible_user_dir }}/{{ cacert }}.cer"
-      args:
-        executable: /bin/bash
-        chdir: "{{ cspbindir }}"
+  roles:
+    - 17.cprodesktop-pfx-up
+    - 17.cprodesktop-pfx-install
 
 ```
 </details>
