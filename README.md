@@ -204,8 +204,9 @@ retry_files_enabled = False
 
 ### Установка КриптоПро CSP 5.0 R3
 
-Далее потребуется распаковать ранее загруженный дистрибутив КриптоПро CSP, запустить вложенный скрипт __install.sh__ с необходимым набором параметров (уровни кс{1,2} и набор компонентов), ввести лицензии, добавить гамму и перезапустить службу cprocsp. 
-Все эти шаги выполняет плейбук [02.install-csp.yml](vagrant/ansible.ca/02.cprocsp-install.yml)
+Далее потребуется распаковать ранее загруженный дистрибутив КриптоПро CSP, запустить вложенный скрипт __install.sh__ с необходимым набором параметров (уровни кс{1,2} и набор компонентов), 
+ввести лицензии, добавить гамму и перезапустить службу cprocsp. 
+Все эти действия выполняет роль [02.cprocsp-install](vagrant/ansible.ca/roles/02.cprocsp-install) плейбук [02.cprocsp-install.yml](vagrant/ansible.ca/02.cprocsp-install.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -219,15 +220,16 @@ retry_files_enabled = False
 ```
 </details>
 
-Каждому из перечисленных шагов соответствует уникальный __тэг__:
-  - :white_check_mark: extract - создание каталога, в случае его отсутствия, и распаковка дистрибутива в этот каталог;
-  - :white_check_mark: install - запуск скрипта для установки _Криптопро CSP_ с заданными ключами;
-  - :white_check_mark: license - ввод лицензии на использование _Криптопро CSP_;
-  - :white_check_mark: gamma - копирование ранее созданной гаммы и задание прав доступа к ней;
-  - :white_check_mark: restart - перезапуск службы криптопрвайдера.
+Данная роль выполняет следующие шаги:
+  - :white_check_mark: создание каталога, в случае его отсутствия, и распаковка дистрибутива в этот каталог;
+  - :white_check_mark: запуск скрипта для установки _Криптопро CSP_ с заданными ключами;
+  - :white_check_mark: ввод лицензии на использование _Криптопро CSP_;
+  - :white_check_mark: копирование ранее созданной гаммы и задание прав доступа к ней;
+  - :white_check_mark: перезапуск службы криптопрвайдера.
 
 ### Установка PostgreSQL Server
-Клиентская и серверная часть Postgresql устанавливается из репозиториев Debian. Для этого используем плейбук [03.install-postgres.yml](vagrant/ansible.ca/play/03.install-postgres.yml)
+Клиентская и серверная часть Postgresql устанавливается из репозиториев Debian. Для этого используем роль [03.pgsql-client-install](vagrant/ansible.ca/roles/03.pgsql-client-install), 
+плейбук [03.pgsql-install.yml](vagrant/ansible.ca/03.pgsql-install.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
@@ -236,33 +238,19 @@ retry_files_enabled = False
 - name: <<< PLAYBOOK 03 >>> APT. INSTALL POSTGRESQL | Install Client.
   hosts: caservers
   become: true
-  tasks:
-  - name: INSTALL POSTGRESQL. Install Client.
-    ansible.builtin.apt:
-      name: acl,postgresql-client,python3-cryptography
-      state: present
-      update_cache: false
-
-  - name: INSTALL Libssl1.1.
-    ansible.builtin.apt:
-      deb: "{{ dst_dirinst }}/{{ libssl1 }}"
-      state: present
+  roles:
+    - 03.pgsql-client-install
 
 - name: <<< PLAYBOOK 03 >>> APT. INSTALL POSTGRESQL | Install Server.
   hosts: cprodbserver
   become: true
-  tasks:
-  - name: INSTALL POSTGRESQL. Install Server.
-    ansible.builtin.apt:
-      name: postgresql,python3-psycopg2,acl
-      state: present
-      update_cache: false
-
+  roles:
+    - 03.pgsql-server-install
 ```
 
 </details>
 
-В данном плейбуке мы для серверов __cproca__ и __cprora__ (группа хостов __caservers__ в файле __staging/hosts__) установили пакеты:
+Здесь мы для серверов __cproca__ и __cprora__ (группа хостов __caservers__ в файле __staging/hosts__) установили пакеты:
   - :white_check_mark: acl
   - :white_check_mark: postgresql-client
   - :white_check_mark: python3-cryptography
