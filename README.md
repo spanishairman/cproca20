@@ -918,3 +918,55 @@ WantedBy=multi-user.target
     - :heavy_check_mark: указали отпечаток сертификата для подключения к _Nats_ со стороны _pkica_;
     - :heavy_check_mark: перезапустили службы _cryptopro.ra.service_, _cryptopro.ra.web.service_.
 
+### Настройка веб-сервера Nginx
+Плейбук  [20.config-nginx.yml](vagrant/ansible.ca/20.config-nginx.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 20 >>> CPRORA | Install cert for Webserver
+  hosts: cproraserver
+  roles:
+    - 20.nginx-cert
+
+- name: <<< PLAYBOOK 20 >>> CPRORA | Create nginx.conf
+  hosts: cproraserver
+  become: true
+  roles:
+    - 20.nginx-config
+```
+</details>
+
+Здесь мы сначала устанавливаем сертификат веб-сервера ЦР в хранилище пользователя _nginx_ из pfx-файла и указываем его серийный номер в конфигурационном файле _nginx.conf_, используя шаблон j2.
+Затем добавляем пользователя _nginx_ в группу, у которой есть права на чтение рабочего каталога службы _cryptopro.ra.web_.
+После этого перезапускаем службу _nginx_.
+
+### Создание каталога, группы и оператора на Центре регистрации
+Плейбук [21.operators.yml](vagrant/ansible.ca/21.operators.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 20 >>> CPRORA | Create folder, group and operator
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  roles:
+    - 21.create-folder
+    - 21.create-group
+    - 21.create-operator
+```
+</details>
+
+Данный плейбук:
+  - :white_check_mark: создает каталог __RA__ на Центре регистрации;
+  - :white_check_mark: создает группу __Operatosr__;
+  - :white_check_mark: предоставляет для группы __Operatosr__ следующие права на каталог __RA__:
+    - :heavy_check_mark: _--manage-user_;
+    - :heavy_check_mark: _--submit-cert-request_;
+    - :heavy_check_mark: _--resolve-cert-request_;
+    - :heavy_check_mark: _--submit-rev-request_;
+    - :heavy_check_mark: _--resolve-rev-request_;
+  - :white_check_mark: создает оператора, с необходимым набором параметров.
