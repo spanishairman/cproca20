@@ -971,7 +971,7 @@ WantedBy=multi-user.target
     - :heavy_check_mark: _--resolve-rev-request_;
   - :white_check_mark: создает оператора, с необходимым набором параметров.
 
-### Установка графического окружения, менеджера дисплеев и браузера на раборчее место оператора
+### Установка графического окружения, менеджера дисплеев и браузера на рабочее место оператора
 Плейбук [90.install-cinnamon.yml](vagrant/ansible.ca/90.install-cinnamon.yml):
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
