@@ -962,8 +962,8 @@ WantedBy=multi-user.target
 
 Данный плейбук:
   - :white_check_mark: создает каталог __RA__ на Центре регистрации;
-  - :white_check_mark: создает группу __Operatosr__;
-  - :white_check_mark: предоставляет для группы __Operatosr__ следующие права на каталог __RA__:
+  - :white_check_mark: создает группу __Operators__;
+  - :white_check_mark: предоставляет для группы __Operators__ следующие права на каталог __RA__:
     - :heavy_check_mark: _--manage-user_;
     - :heavy_check_mark: _--submit-cert-request_;
     - :heavy_check_mark: _--resolve-cert-request_;
