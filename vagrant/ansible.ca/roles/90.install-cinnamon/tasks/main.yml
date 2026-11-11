@@ -1,0 +1,13 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/90.install-cinnamon
+- name: INSTALL DE.
+  ansible.builtin.apt:
+    name: lightdm,icewm
+    state: present
+    update_cache: false
+  notify: Restart service LightDM
+
+- name: INSTALL Chromium.
+  ansible.builtin.apt:
+    deb: "{{ dst_dirinst }}/{{ chromiumdistro }}"

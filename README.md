@@ -970,3 +970,19 @@ WantedBy=multi-user.target
     - :heavy_check_mark: _--submit-rev-request_;
     - :heavy_check_mark: _--resolve-rev-request_;
   - :white_check_mark: создает оператора, с необходимым набором параметров.
+
+### Установка графического окружения, менеджера дисплеев и браузера на раборчее место оператора
+Плейбук [90.install-cinnamon.yml](vagrant/ansible.ca/90.install-cinnamon.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 90 >>> APT. INSTALL DE.
+  hosts: cprodesktopserver
+  become: true
+  roles:
+    - 90.install-cinnamon
+```
+</details>
+Здесь мы устанавливаем дисплей-менеджер _lightdm_, рабочее окружение _icewm_ и браузер chromium-gost на рабочей станции оператора.

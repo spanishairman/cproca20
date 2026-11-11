@@ -1,0 +1,7 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/90.install-cinnamon
+- name: Restart service LightDM
+  ansible.builtin.service:
+    name: lightdm.service
+    state: restarted

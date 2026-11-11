@@ -1,0 +1,6 @@
+---
+- name: <<< PLAYBOOK 90 >>> APT. INSTALL DE.
+  hosts: cprodesktopserver
+  become: true
+  roles:
+    - 90.install-cinnamon
