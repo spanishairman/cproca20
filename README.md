@@ -862,3 +862,59 @@ WantedBy=multi-user.target
 
 ```
 </details>
+
+### Выпуск списков отзыва на Центре Сертификации
+Плейбук [18.release-crl.yml](vagrant/ansible.ca/18.release-crl.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 18 >>> ISSUE A CRLS
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  roles:
+    - 18.release-crl
+```
+</details>
+
+### Редактирование файлов настроек утилиты pkica и служб серверов ЦС и ЦР
+Плейбук [19.config-distros-set-parameters.yml](vagrant/ansible.ca/19.config-distros-set-parameters.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 19 >>> CPROCA | Config Pkica and Ca for TLS-connections to Nats.
+  hosts: cprocaserver
+  become: true
+  roles:
+    - 19.config-distros-set-parameters-nats
+    - 19.config-distros-set-parameters-ca
+
+- name: <<< PLAYBOOK 19 >>> CPRORA | Config Pkica and Ra for TLS-connections to Nats.
+  hosts: cproraserver
+  become: true
+  roles:
+    - 19.config-distros-set-parameters-ra
+```
+</details>
+
+Здесь мы на:
+  - :white_check_mark: Центре сертификации:
+    - :heavy_check_mark: скопировали файлы сертификатов nats-client и nats-server в рабочий каталог _Nats_;
+    - :heavy_check_mark: отредактировали файл службы _nats-streaming-server_ для работы с конфигурационным файлом _nats.conf_ (вместо _nats.no-tls.conf_);
+    - :heavy_check_mark: указали _systemd_ перечитать конфигурацию;
+    - :heavy_check_mark: перезапустили _nats-streaming-server_;
+    - :heavy_check_mark: включили TLS для _pkica_;
+    - :heavy_check_mark: включили TLS для службы ЦС;
+    - :heavy_check_mark: указали отпечаток сертификата для подключения к _Nats_ со стороны _pkica_;
+    - :heavy_check_mark: указали отпечаток сертификата для подключения к _Nats_ со стороны службы ЦС;
+    - :heavy_check_mark: перезапустили службу _cryptopro.ca.service_;
+  - :white_check_mark: Центре регистрации:
+    - :heavy_check_mark: указали отпечаток сертификата для подключения к _Nats_ со стороны службы ЦР;
+    - :heavy_check_mark: указали отпечаток сертификата для подключения к _Nats_ со стороны Web-службы ЦР;
+    - :heavy_check_mark: указали отпечаток сертификата для подключения к _Nats_ со стороны _pkica_;
+    - :heavy_check_mark: перезапустили службы _cryptopro.ra.service_, _cryptopro.ra.web.service_.
+
