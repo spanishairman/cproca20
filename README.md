@@ -971,6 +971,39 @@ WantedBy=multi-user.target
     - :heavy_check_mark: _--resolve-rev-request_;
   - :white_check_mark: создает оператора, с необходимым набором параметров.
 
+### Добавление шаблонов сертификатов на Центре регистрации
+До версии УЦ _1.63.0.32_ включительно, на Центре регистрации необходимо добавить шаблоны сертификатов, настроенные на Центре сертификации.
+Для этого на ЦС необходимо экспортировать шаблоны в файл в формате _json_, перенести полученный файл на ЦР и выполнить их импорт.
+Экспорт шаблонов на ЦС - плейбук [22.templates-export.yml](vagrant/ansible.ca/22.templates-export.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 22 >>> Cproca. Export templates
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  roles:
+    - 22.templates-export
+```
+</details>
+
+Импорт шаблонов на ЦР - плейбук [23.templates-import.yml](vagrant/ansible.ca/23.templates-import.yml):
+<details>
+<summary>Клик, чтобы показать код :arrow_down_small:</summary>
+
+```
+---
+- name: <<< PLAYBOOK 23 >>> Cprora. Import templates
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  roles:
+    - 23.templates-import
+```
+</details>
+
 ### Установка графического окружения, менеджера дисплеев и браузера на рабочее место оператора
 Плейбук [90.install-cinnamon.yml](vagrant/ansible.ca/90.install-cinnamon.yml):
 <details>
