@@ -1,0 +1,7 @@
+---
+- name: <<< PLAYBOOK 23 >>> Cprora. Import templates
+  hosts: cproraserver
+  become: true
+  become_user: "{{ cpra_srv_acc }}"
+  roles:
+    - 23.templates-import

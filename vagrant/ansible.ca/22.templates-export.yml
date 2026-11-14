@@ -1,0 +1,7 @@
+---
+- name: <<< PLAYBOOK 22 >>> Cproca. Export templates
+  hosts: cprocaserver
+  become: true
+  become_user: "{{ cpca_srv_acc }}"
+  roles:
+    - 22.templates-export
