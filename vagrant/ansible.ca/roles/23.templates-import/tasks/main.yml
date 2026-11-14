@@ -1,0 +1,8 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/23.templates-import
+- name: Upload templates on RA
+  ansible.builtin.copy:
+    src: "{{ localdir }}/share/{{ catmpls }}"
+    dest: "{{ ansible_user_dir }}/{{ catmpls }}"
+  notify: Import templates

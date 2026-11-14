@@ -5,6 +5,6 @@
   ansible.builtin.copy:
     src: files/
     dest: "{{ dst_dirinst }}"
-    owner: "{{ dst_user }}"
-    group: "{{ dst_user }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: '0644'

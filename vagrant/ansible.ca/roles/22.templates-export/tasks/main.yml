@@ -1,0 +1,10 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/22.templates-export
+- name: CryptoPro CA. Export templates
+  ansible.builtin.shell: |
+    ./"{{ pkicabin }}" ca template list --detailed --file "{{ ansible_user_dir }}/{{ catmpls }}" --format Json
+  args:
+    executable: /bin/bash
+    chdir: "{{ pkicabase }}"
+  notify: FETCH

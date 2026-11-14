@@ -1,7 +1,7 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # tasks file for roles/04.pgsql-server-config
-- name: CONFIGURE POSTGRESQL. Configure Server. Edit pg_hba configuration file. Add "{ cproca-test }" and "{ cprora-test }" access
+- name: CONFIGURE POSTGRESQL. Configure Server. Edit pg_hba configuration file
   ansible.builtin.postgresql_pg_hba:
     dest: /etc/postgresql/{{ pg_ver }}/main/pg_hba.conf
     contype: host

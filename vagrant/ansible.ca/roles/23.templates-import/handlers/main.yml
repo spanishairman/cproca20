@@ -1,0 +1,9 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/23.templates-import
+- name: Import templates
+  ansible.builtin.shell: |
+    ./"{{ pkicabin }}" ra settings set --name Templates --file "{{ ansible_user_dir }}/{{ catmpls }}"
+  args:
+    executable: /bin/bash
+    chdir: "{{ pkicabase }}"
