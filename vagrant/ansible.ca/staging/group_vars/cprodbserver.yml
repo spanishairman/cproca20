@@ -1,5 +1,12 @@
+pg_ver: 15
 cpca_dbadmin: cpcadbadmin
 cpra_dbadmin: cpradbadmin
 cpca_db: cpcadb
 cpra_db: cpradb
 certreg_db: CertRegistry
+ca_address: 192.168.1.1
+ca_hostname: cproca
+ra_address: 192.168.1.2
+ra_hostname: cprora
+pg_address: 192.168.1.3
+pg_hostname: cprodb
