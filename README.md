@@ -68,21 +68,17 @@ cprodesktopserver
 </details>
 
 #### Файлы описания переменных
-Описание переменных для серверов УЦ находится в файле [caservers.yml](vagrant/ansible.ca/staging/group_vars/caservers.yml)
+Описание переменных для серверов УЦ находится в файле [cspservers.yml](vagrant/ansible.ca/staging/group_vars/cspservers.yml)
 <details>
 <summary>Клик, чтобы показать код :arrow_down_small:</summary>
 
 ```
 # --- Global vars ---
 allow_world_readable_tmpfiles: true
-src_dirinst: /home/max/vagrant/ansible.ca/files
 dst_dirinst: /home/vagrant/ansible.ca/files
-dst_user: vagrant
 localdir: /home/max/vagrant/ansible.ca
 # --- CryptoPro CSP ---
 liccsp: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
-licocsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
-lictsputils: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 csp_distro: linux-amd64_deb.tgz
 dircsp: csp50r2
 cspbase: /opt/cprocsp/
@@ -93,7 +89,14 @@ cpca_dbadmin: cpcadbadmin
 cpra_dbadmin: cpradbadmin
 cpca_db: cpcadb
 cpra_db: cpradb
+certreg_db: CertRegistry
+libssl1: libssl1.1_1.1.0g-2ubuntu4_amd64.deb
 # --- CryptoPro CA/RA ---
+caname: "Тестовый Удостоверяющий Центр АО GAMMA-TRADE"
+company: АО \\"GAMMA-TRADE\\"
+orgname: 'AO \\"GAMMA-TRADE\\" LLC'
+licca: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+licra: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
 admin_acc: cpca-admin
 admin_acc_pass: !vault |
           $ANSIBLE_VAULT;1.1;AES256
@@ -107,6 +110,11 @@ cpca_srv_acc: cpca-srv
 cpra_srv_acc: cpra-srv
 cabase: /opt/cpca
 cadistro: ca-linux-x64-1.63.0.32.zip
+calog: /var/log/cpca
+cacert: caroot
+cacont: cacont
+casettings: casettings.json
+catmpls: catmpls.json
 casrvbase: /opt/cpca/CryptoPro.Ca.Service
 rasrvbase: /opt/cpca/CryptoPro.Ra.Service
 rawebbase: /opt/cpca/CryptoPro.Ra.Web
@@ -114,10 +122,14 @@ rawebuibase: /opt/cpca/CryptoPro.Ra.Web.Ui
 pkicabase: /opt/cpca/pkica
 casrvsbin: CryptoPro.Ca.Service
 rasrvsbin: CryptoPro.Ra.Service
+cryptcpbin: cryptcp
 rawebsbin: CryptoPro.Ra.Web
 pkicabin: pkica
 natsbase: /opt/cpca/nats-streaming
+natslib: /var/lib/nats-streaming
 natssbin: nats-streaming-server
+nginxbase: /opt/cpca/nginx/
+nginxdistro: nginx-gost-1.18.0_amd64.deb
 ca_address: 192.168.1.1
 ca_hostname: cproca
 ra_address: 192.168.1.2
@@ -141,6 +153,8 @@ crt_ca_caclnt: caclnt
 crt_ca_pkicaclnt: pkicaclnt
 crt_opertls: opertls
 crt_opersign: opersign
+# --- Desktop ---
+chromiumdistro: chromium-gost-156.0.8078.48-linux-amd64.deb
 ```
 </details>
 
